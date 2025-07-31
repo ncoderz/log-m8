@@ -1,0 +1,13 @@
+# BUILD
+/dist
+/coverage
+/resources/output
+node_modules
+
+
+# VSCODE
+.vscode/mise-tools
+
+
+# PACKAGE SPECIFIC
+.env
