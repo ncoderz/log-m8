@@ -4,7 +4,7 @@ function main() {
   Logging.init({
     level: LogLevel.debug,
     loggers: {
-      default: LogLevel.info,
+      default: LogLevel.trace,
     },
     appenders: [
       {
@@ -16,19 +16,28 @@ function main() {
     formatters: [
       {
         name: 'default',
+        color: true,
         // timestampFormat: 'hh:mm:ss.SSS',
-        // format: ['{timestamp} [{level}] {message}', '{logger}'],
+        // format: ['{timestamp} [{level}] {message}', '{data}'],
       },
     ],
   });
   // Logging.init();
 
   const log = Logging.getLogger('default');
+  const data = {
+    user: 'john_doe',
+    action: 'login',
+    success: true,
+    array: [1, 2, 3],
+    nested: { key: 'value' },
+  };
 
   log.trace('This is a trace message');
   log.track('This is a tracking message');
-  log.debug('This is a debug message');
+  log.debug('This is a debug message', data, { inline: 'data' });
   log.info('This is an info message');
+  log.info({ inline: 'data' });
   log.warn('This is a warning message');
   log.error('This is an error message');
   log.fatal('This is a fatal message');

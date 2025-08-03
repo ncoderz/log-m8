@@ -13,10 +13,8 @@ const DEFAULT_TIMESTAMP_FORMAT = 'hh:mm:ss.SSS';
 export interface DefaultFormatterConfig extends FormatterConfig {
   format?: string | string[];
   timestampFormat?: string;
+  color?: boolean;
 }
-
-const FORMAT_REGEX = /^\{(.+?)\}$/;
-
 class DefaultFormatter implements Formatter {
   public name = 'default';
   public version = '1.0.0';
@@ -26,9 +24,20 @@ class DefaultFormatter implements Formatter {
   private _format!: string[][];
   private _timestampFormat: string = DEFAULT_TIMESTAMP_FORMAT;
   private _levelMap!: Record<string, string>;
+  private _colorEnabled: boolean = false;
+  private _levelColorMap: Record<string, string> = {
+    trace: '\x1b[37m', // White
+    track: '\x1b[38;5;208m', // Orange
+    debug: '\x1b[36m', // Cyan
+    info: '\x1b[32m', // Green
+    warn: '\x1b[33m', // Yellow
+    error: '\x1b[31m', // Red
+    fatal: '\x1b[41m', // Red background
+  };
 
   public init(config: DefaultFormatterConfig): void {
     this._config = Object.assign({}, config);
+    this._colorEnabled = !!this._config.color;
 
     // Support format as a string: split into array using {} tokens
     this._format = [];
@@ -64,7 +73,13 @@ class DefaultFormatter implements Formatter {
       .values()
       .reduce(
         (acc, level) => {
-          acc[level] = level.toUpperCase().padEnd(maxLevelLength, ' ');
+          let levelStr = level.toUpperCase().padEnd(maxLevelLength, ' ');
+          if (this._colorEnabled) {
+            const color = this._levelColorMap[level] || '';
+            const reset = '\x1b[0m';
+            levelStr = color + levelStr + reset;
+          }
+          acc[level] = levelStr;
           return acc;
         },
         {} as Record<string, string>,
@@ -78,61 +93,49 @@ class DefaultFormatter implements Formatter {
   public format(logEvent: LogEvent): unknown[] {
     const formatArr = this._format;
     if (formatArr.length > 0) {
-      let dataIndex = -1;
-      const output = formatArr.map((item, idx) => {
-        const singleItem = item.length === 1;
-        let partStr = '';
-        for (const part of item) {
-          const match = FORMAT_REGEX.exec(part);
-          if (match) {
-            const key = match[1];
-            let value = LogM8Utils.getPropertyByPath(logEvent, match[1]);
-            // Special handling for level
-            if (key === 'LEVEL') {
-              value = this._levelMap[logEvent.level] ?? logEvent.level;
-            }
-            // Special handling for timestamp
-            else if (key === 'timestamp') {
-              value = LogM8Utils.formatTimestamp(value as Date, this._timestampFormat);
-            }
-            // Special handling for data
-            else if (singleItem && key === 'data') {
-              dataIndex = idx;
-            }
-            if (singleItem) return value;
-            partStr += String(value);
-          } else {
-            // Literal string
-            partStr += part;
-          }
+      const output = formatArr.map((item) => {
+        if (item.length === 1) {
+          return this.resolveToken(item[0], logEvent);
         }
-
-        return partStr;
+        return item.reduce((str, part) => {
+          const val = this.resolveToken(part, logEvent);
+          return str + String(val);
+        }, '');
       });
-
-      // Expand the data array
+      // locate data array entry and expand or remove it
+      const dataIndex = output.findIndex((v) => Array.isArray(v));
       if (dataIndex >= 0) {
         const data = output[dataIndex] as unknown[];
-        if (data.length > 0) {
-          // Spread the data into the output
-          output.splice(dataIndex, 1, ...data);
-        } else {
-          // Remove the data part if no data
-          output.splice(dataIndex, 1);
-        }
+        if (data.length > 0) output.splice(dataIndex, 1, ...data);
+        else output.splice(dataIndex, 1);
       }
-
       return output;
     }
-    // Default output if no format array
     return [
       LogM8Utils.formatTimestamp(logEvent.timestamp, this._timestampFormat),
       logEvent.level,
       logEvent.logger,
       logEvent.message,
       ...logEvent.data,
-      logEvent.context ? JSON.stringify(logEvent.context) : undefined,
+      logEvent.context,
     ];
+  }
+
+  private resolveToken(part: string, logEvent: LogEvent): unknown {
+    // Token syntax: {key}
+    if (part.startsWith('{') && part.endsWith('}')) {
+      const key = part.slice(1, -1);
+      if (key === 'LEVEL') {
+        return this._levelMap[logEvent.level] ?? logEvent.level;
+      } else if (key === 'timestamp') {
+        const raw = LogM8Utils.getPropertyByPath(logEvent, key);
+        return LogM8Utils.formatTimestamp(raw as Date, this._timestampFormat);
+      }
+      // data and other properties
+      return LogM8Utils.getPropertyByPath(logEvent, key);
+    }
+    // Literal text
+    return part;
   }
 }
 
