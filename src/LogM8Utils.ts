@@ -1,6 +1,14 @@
 const TIMESTAMP_TOKEN_REGEX = /(yyyy|SSS|hh|mm|ss|SS|yy|MM|dd|S)/g;
 
 class LogM8Utils {
+  /**
+   * Returns true if running in a browser environment.
+   * Minimalist, standard approach.
+   */
+  public static isBrowser(): boolean {
+    return typeof window !== 'undefined' && typeof window.document !== 'undefined';
+  }
+
   public static getPropertyByPath(obj: unknown, path: string): unknown {
     let value = obj;
     const segments = path.split('.');

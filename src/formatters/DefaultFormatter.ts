@@ -23,7 +23,7 @@ class DefaultFormatter implements Formatter {
   private _config!: DefaultFormatterConfig;
   private _format!: string[][];
   private _timestampFormat: string = DEFAULT_TIMESTAMP_FORMAT;
-  private _levelMap!: Record<string, string>;
+  private _levelMap!: Record<string, string | [string, string]>;
   private _colorEnabled: boolean = false;
   private _levelColorMap: Record<string, string> = {
     trace: '\x1b[37m', // White
@@ -34,8 +34,19 @@ class DefaultFormatter implements Formatter {
     error: '\x1b[31m', // Red
     fatal: '\x1b[41m', // Red background
   };
+  private _levelCssColorMap: Record<string, string> = {
+    trace: 'color: #bbb;', // Light gray
+    track: 'color: orange;',
+    debug: 'color: cyan;',
+    info: 'color: green;',
+    warn: 'color: gold;',
+    error: 'color: red;',
+    fatal: 'background: red; color: white;',
+  };
 
   public init(config: DefaultFormatterConfig): void {
+    const isBrowser = LogM8Utils.isBrowser();
+
     this._config = Object.assign({}, config);
     this._colorEnabled = !!this._config.color;
 
@@ -69,20 +80,29 @@ class DefaultFormatter implements Formatter {
         .values()
         .map((l) => l.length),
     );
+
     this._levelMap = Enum(LogLevel)
       .values()
       .reduce(
         (acc, level) => {
           let levelStr = level.toUpperCase().padEnd(maxLevelLength, ' ');
           if (this._colorEnabled) {
-            const color = this._levelColorMap[level] || '';
-            const reset = '\x1b[0m';
-            levelStr = color + levelStr + reset;
+            if (isBrowser) {
+              // Browser: use CSS style string
+              const css = this._levelCssColorMap[level] || '';
+              acc[level] = [`%c${levelStr}`, css];
+              return acc;
+            } else {
+              // Node: use ANSI
+              const color = this._levelColorMap[level] || '';
+              const reset = '\x1b[0m';
+              levelStr = color + levelStr + reset;
+            }
           }
           acc[level] = levelStr;
           return acc;
         },
-        {} as Record<string, string>,
+        {} as Record<string, string | [string, string]>,
       );
   }
 
