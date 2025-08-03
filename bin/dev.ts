@@ -1,25 +1,27 @@
 import { Logging, LogLevel } from '../src/index.ts';
 
 function main() {
-  // Logging.init({
-  //   level: LogLevel.debug,
-  //   loggers: {
-  //     default: LogLevel.info,
-  //   },
-  //   appenders: [
-  //     {
-  //       name: 'console',
-  //       formatter: 'default',
-  //     },
-  //   ],
-  //   filters: [],
-  //   formatters: [
-  //     {
-  //       name: 'default',
-  //     },
-  //   ],
-  // });
-  Logging.init();
+  Logging.init({
+    level: LogLevel.debug,
+    loggers: {
+      default: LogLevel.info,
+    },
+    appenders: [
+      {
+        name: 'console',
+        formatter: 'default',
+      },
+    ],
+    filters: [],
+    formatters: [
+      {
+        name: 'default',
+        timestampFormat: 'hh:mm:ss.SSS',
+        // format: ['{timestamp} [{level}] {message}', '{logger}'],
+      },
+    ],
+  });
+  // Logging.init();
 
   const log = Logging.getLogger('default');
 

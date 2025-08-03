@@ -197,7 +197,12 @@ class LogM8 {
     this._plugins.set(plugin.name, plugin);
   }
 
-  private _log(logger: LogImpl, level: LogLevelType, ...data: unknown[]): void {
+  private _log(
+    logger: LogImpl,
+    level: LogLevelType,
+    message: string | unknown,
+    ...data: unknown[]
+  ): void {
     const levelNumber = this._logLevelValues.indexOf(level);
     if (levelNumber > logger._levelNumber) return;
 
@@ -205,6 +210,7 @@ class LogM8 {
     const logEvent: LogEvent = {
       logger: logger.name,
       level,
+      message,
       data,
       context: logger.context,
       timestamp: new Date(),

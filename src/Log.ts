@@ -2,13 +2,13 @@ import type { LogContext } from './LogContext.ts';
 import type { LogLevelType } from './LogLevel.ts';
 
 export interface Log {
-  fatal(...data: unknown[]): void;
-  error(...data: unknown[]): void;
-  warn(...data: unknown[]): void;
-  info(...data: unknown[]): void;
-  debug(...data: unknown[]): void;
-  trace(...data: unknown[]): void;
-  track(...data: unknown[]): void;
+  fatal(message: string | unknown, ...data: unknown[]): void;
+  error(message: string | unknown, ...data: unknown[]): void;
+  warn(message: string | unknown, ...data: unknown[]): void;
+  info(message: string | unknown, ...data: unknown[]): void;
+  debug(message: string | unknown, ...data: unknown[]): void;
+  trace(message: string | unknown, ...data: unknown[]): void;
+  track(message: string | unknown, ...data: unknown[]): void;
 
   readonly isFatal: boolean;
   readonly isError: boolean;

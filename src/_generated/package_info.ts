@@ -3,9 +3,9 @@
 /* eslint-disable */
 
 export const PACKAGE_INFO = {
-  "name": "m8",
+  "name": "log-m8",
   "version": "0.0.1",
   "author": "RA Sewell <richard.sewell@ncoderz.com>",
   "license": "BSD-2-Clause",
-  "description": "Programmers helpful command line mate"
+  "description": "Logging system for TypeScript / JavaScript"
 };

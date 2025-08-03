@@ -64,22 +64,25 @@
     }
   },
   "engines": {
-    "node": ">=20",
+    "node": ">=18",
     "npm": ">=10"
   },
   "dependencies": {
     "@ncoderz/superenum": "^1.0.0"
   },
   "devDependencies": {
-    "@types/fs-extra": "^11.0.4",
     "@eslint/json": "^0.12.0",
     "@eslint/markdown": "^6.6.0",
+    "@swc/core": "^1.13.3",
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "^24.1.0",
     "eslint": "^9.11.1",
     "eslint-plugin-prettier": "^5.5.1",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "fs-extra": "^11.3.0",
     "prettier": "^3.3.3",
+    "terser": "^5.43.1",
+    "tsup": "^8.5.0",
     "typescript": "^5.6.2",
     "typescript-eslint": "^8.35.0"
   }
