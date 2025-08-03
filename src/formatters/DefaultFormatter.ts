@@ -1,11 +1,14 @@
+import { Enum } from '@ncoderz/superenum';
+
 import type { Formatter } from '../Formatter.ts';
 import type { FormatterConfig } from '../FormatterConfig.ts';
 import type { LogEvent } from '../LogEvent.ts';
+import { LogLevel } from '../LogLevel.ts';
 import { LogM8Utils } from '../LogM8Utils.ts';
 import { PluginKind } from '../PluginKind.ts';
 
-const DEFAULT_FORMAT = ['{timestamp} [{level}] ({logger}) {message}', '{data}'];
-const DEFAULT_TIMESTAMP_FORMAT = 'locale';
+const DEFAULT_FORMAT = ['{timestamp} [{LEVEL}] ({logger}) {message}', '{data}'];
+const DEFAULT_TIMESTAMP_FORMAT = 'hh:mm:ss.SSS';
 
 export interface DefaultFormatterConfig extends FormatterConfig {
   format?: string | string[];
@@ -22,6 +25,7 @@ class DefaultFormatter implements Formatter {
   private _config!: DefaultFormatterConfig;
   private _format!: string[][];
   private _timestampFormat: string = DEFAULT_TIMESTAMP_FORMAT;
+  private _levelMap!: Record<string, string>;
 
   public init(config: DefaultFormatterConfig): void {
     this._config = Object.assign({}, config);
@@ -49,6 +53,22 @@ class DefaultFormatter implements Formatter {
     }
 
     this._timestampFormat = this._config.timestampFormat ?? DEFAULT_TIMESTAMP_FORMAT;
+
+    // Build the level map for quick access
+    const maxLevelLength = Math.max(
+      ...Enum(LogLevel)
+        .values()
+        .map((l) => l.length),
+    );
+    this._levelMap = Enum(LogLevel)
+      .values()
+      .reduce(
+        (acc, level) => {
+          acc[level] = level.toUpperCase().padEnd(maxLevelLength, ' ');
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
   }
 
   public dispose(): void {
@@ -67,8 +87,12 @@ class DefaultFormatter implements Formatter {
           if (match) {
             const key = match[1];
             let value = LogM8Utils.getPropertyByPath(logEvent, match[1]);
+            // Special handling for level
+            if (key === 'LEVEL') {
+              value = this._levelMap[logEvent.level] ?? logEvent.level;
+            }
             // Special handling for timestamp
-            if (key === 'timestamp') {
+            else if (key === 'timestamp') {
               value = LogM8Utils.formatTimestamp(value as Date, this._timestampFormat);
             }
             // Special handling for data

@@ -16,7 +16,7 @@ function main() {
     formatters: [
       {
         name: 'default',
-        timestampFormat: 'hh:mm:ss.SSS',
+        // timestampFormat: 'hh:mm:ss.SSS',
         // format: ['{timestamp} [{level}] {message}', '{logger}'],
       },
     ],

@@ -1,3 +1,5 @@
+const TIMESTAMP_TOKEN_REGEX = /(yyyy|SSS|hh|mm|ss|SS|yy|MM|dd|S)/g;
+
 class LogM8Utils {
   public static getPropertyByPath(obj: unknown, path: string): unknown {
     let value = obj;
@@ -41,8 +43,7 @@ class LogM8Utils {
       S: pad(Math.floor(date.getMilliseconds() / 100), 1),
     };
     // Match longest tokens first to avoid partial replacement
-    const re = /(yyyy|SSS|hh|mm|ss|SS|yy|MM|dd|S)/g;
-    return fmt.replace(re, (m) => tokens[m] ?? m);
+    return fmt.replace(TIMESTAMP_TOKEN_REGEX, (m) => tokens[m] ?? m);
   }
 }
 
