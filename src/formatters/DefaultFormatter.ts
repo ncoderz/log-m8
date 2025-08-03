@@ -44,6 +44,9 @@ class DefaultFormatter implements Formatter {
     fatal: 'background: red; color: white;',
   };
 
+  private _lastLogEvent: LogEvent | undefined;
+  private _cache: unknown[] | undefined = [];
+
   public init(config: DefaultFormatterConfig): void {
     const isBrowser = LogM8Utils.isBrowser();
 
@@ -107,13 +110,21 @@ class DefaultFormatter implements Formatter {
   }
 
   public dispose(): void {
-    // No resources to dispose for console appender
+    this._lastLogEvent = undefined;
+    this._cache = undefined;
   }
 
   public format(logEvent: LogEvent): unknown[] {
+    // Check and return cached result if available
+    if (this._cache && this._lastLogEvent === logEvent) {
+      return this._cache;
+    }
+
+    let output: unknown[] | undefined;
+
     const formatArr = this._format;
     if (formatArr.length > 0) {
-      const output = formatArr.map((item) => {
+      output = formatArr.map((item) => {
         if (item.length === 1) {
           return this.resolveToken(item[0], logEvent);
         }
@@ -129,16 +140,27 @@ class DefaultFormatter implements Formatter {
         if (data.length > 0) output.splice(dataIndex, 1, ...data);
         else output.splice(dataIndex, 1);
       }
-      return output;
+    } else {
+      output = [
+        LogM8Utils.formatTimestamp(logEvent.timestamp, this._timestampFormat),
+        logEvent.level,
+        logEvent.logger,
+        logEvent.message,
+        ...logEvent.data,
+        logEvent.context,
+      ];
     }
-    return [
-      LogM8Utils.formatTimestamp(logEvent.timestamp, this._timestampFormat),
-      logEvent.level,
-      logEvent.logger,
-      logEvent.message,
-      ...logEvent.data,
-      logEvent.context,
-    ];
+
+    // Cache the formatting in case called by multiple appenders
+    this._lastLogEvent = logEvent;
+    this._cache = output;
+
+    return output;
+  }
+
+  public clearCache(): void {
+    this._lastLogEvent = undefined;
+    this._cache = undefined;
   }
 
   private resolveToken(part: string, logEvent: LogEvent): unknown {

@@ -15,6 +15,7 @@ import { PluginKind, type PluginKindType } from './PluginKind.ts';
 class LogM8 {
   private _plugins: Map<string, Plugin> = new Map();
   private _appenders: Appender[] = [];
+  private _formatters: Formatter[] = [];
   private _loggers: Map<string, Log> = new Map();
 
   private _defaultLevel: LogLevelType = LogLevel.info;
@@ -63,6 +64,8 @@ class LogM8 {
       const formatter = this._plugins.get(formatterConfig.name) as Formatter;
       if (formatter) {
         formatter.init(formatterConfig);
+
+        this._formatters.push(formatter);
       } else {
         if (console && console.log) {
           console.log(`LogM8: Formatter '${formatterConfig.name}' not found.`);
@@ -252,6 +255,17 @@ class LogM8 {
         }
       }
     }
+
+    // Clear the formatter caches
+    for (const formatter of this._formatters) {
+      try {
+        formatter.clearCache();
+      } catch (err) {
+        if (console && console.log) {
+          console.log(`LogM8: Failed to clear cache for formatter '${formatter.name}':`, err);
+        }
+      }
+    }
   }
 
   private _getAppender(name: string): Appender | undefined {
@@ -282,6 +296,7 @@ class LogM8 {
 
   private _reset(): void {
     this._appenders = [];
+    this._formatters = [];
     this._loggers.clear();
     this._defaultLevel = LogLevel.info;
     this._asyncBufferingEnabled = false;
