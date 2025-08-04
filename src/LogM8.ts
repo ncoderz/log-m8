@@ -14,6 +14,7 @@ import type { PluginFactory } from './PluginFactory.ts';
 import { PluginKind } from './PluginKind.ts';
 import { PluginManager } from './PluginManager.ts';
 
+const MAX_LOG_BUFFER_SIZE = 100; // Maximum size of the log buffer before dropping events
 const DEFAULT_APPENDERS = [
   {
     name: 'console',
@@ -26,12 +27,16 @@ const DEFAULT_APPENDERS = [
  * Manages loggers, appenders, formatters, and filters.
  */
 class LogM8 {
+  private _initialized = false;
   private _pluginManager: PluginManager = new PluginManager();
   private _appenders: Appender[] = [];
   private _loggers: Map<string, Log> = new Map();
 
   private _defaultLevel: LogLevelType = LogLevel.info;
   private _logLevelValues = Enum(LogLevel).values();
+
+  // Buffer for log events before the system is initialized
+  private _logBuffer: LogEvent[] = [];
 
   constructor() {
     // Register built-in plugin factories
@@ -99,6 +104,8 @@ class LogM8 {
 
     // Sort the appenders by their priority
     this._sortAppenders();
+
+    this._initialized = true;
   }
 
   /**
@@ -110,6 +117,8 @@ class LogM8 {
 
     // Deregister all plugin factories
     this._pluginManager.clearFactories();
+
+    this._initialized = false;
   }
 
   /**
@@ -224,8 +233,24 @@ class LogM8 {
       timestamp: new Date(),
     };
 
-    // Process the log event immediately
-    this._processLogEvent(logEvent);
+    if (this._initialized) {
+      // Process buffered log events first
+      if (this._logBuffer.length > 0) {
+        for (const bufferedEvent of this._logBuffer) {
+          this._processLogEvent(bufferedEvent);
+        }
+        this._logBuffer = []; // Clear the buffer after processing
+      }
+
+      // Process the log event immediately
+      this._processLogEvent(logEvent);
+    } else {
+      // Buffer the log events until initialization is complete
+      if (this._logBuffer.length >= MAX_LOG_BUFFER_SIZE) {
+        this._logBuffer.shift(); // Drop the oldest event if buffer is full
+      }
+      this._logBuffer.push(logEvent);
+    }
   }
 
   private _setLevel(logger: LogImpl, level: LogLevelType): void {

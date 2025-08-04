@@ -24,7 +24,7 @@ const SUPPORTED_LEVELS = new Set<LogLevelType>([
   LogLevel.trace,
 ]);
 
-interface FileAppenderConfig extends AppenderConfig {
+export interface FileAppenderConfig extends AppenderConfig {
   filename: string;
   append?: boolean;
 }

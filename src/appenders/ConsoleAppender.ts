@@ -21,7 +21,7 @@ const SUPPORTED_LEVELS = new Set<LogLevelType>([
   LogLevel.trace,
 ]);
 
-interface ConsoleAppenderConfig extends AppenderConfig {
+export interface ConsoleAppenderConfig extends AppenderConfig {
   //
 }
 
