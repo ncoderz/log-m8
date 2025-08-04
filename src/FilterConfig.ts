@@ -1,5 +1,9 @@
 import type { PluginConfig } from './PluginConfig.ts';
 
+/**
+ * Defines configuration options for a filter plugin.
+ * @extends PluginConfig
+ */
 export interface FilterConfig extends PluginConfig {
-  type: string; // e.g., 'level', 'context'
+  // No additional properties
 }

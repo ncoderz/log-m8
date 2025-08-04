@@ -4,6 +4,7 @@
 /resources/output
 node_modules
 *.log
+/src/_generated
 
 
 # VSCODE
