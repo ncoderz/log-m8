@@ -25,5 +25,5 @@ export interface Log {
   setLevel(level: string): void;
   setContext(context: LogContext): void;
 
-  getLogger(name: string, context: LogContext): Log;
+  getLogger(name: string): Log;
 }

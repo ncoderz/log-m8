@@ -4,9 +4,14 @@ import type { Filter } from '../Filter.ts';
 import type { Formatter } from '../Formatter.ts';
 import type { LogEvent } from '../LogEvent.ts';
 import { LogLevel, type LogLevelType } from '../LogLevel.ts';
+import type { PluginFactory } from '../PluginFactory.ts';
 import { PluginKind } from '../PluginKind.ts';
 
-const SUPPORTED_LEVELS: LogLevelType[] = [
+const NAME = 'console';
+const VERSION = '1.0.0';
+const KIND = PluginKind.appender;
+
+const SUPPORTED_LEVELS = new Set<LogLevelType>([
   LogLevel.fatal,
   LogLevel.error,
   LogLevel.warn,
@@ -14,12 +19,20 @@ const SUPPORTED_LEVELS: LogLevelType[] = [
   LogLevel.debug,
   LogLevel.track,
   LogLevel.trace,
-];
+]);
+
+interface ConsoleAppenderConfig extends AppenderConfig {
+  //
+}
 
 class ConsoleAppender implements Appender {
-  public name = 'console';
-  public version = '1.0.0';
-  public kind = PluginKind.appender;
+  public name = NAME;
+  public version = VERSION;
+  public kind = KIND;
+
+  public readonly supportedLevels = SUPPORTED_LEVELS;
+  public enabled = true;
+  public priority?: number;
 
   private _config?: AppenderConfig;
   private _formatter?: Formatter;
@@ -40,18 +53,13 @@ class ConsoleAppender implements Appender {
     this._formatter = formatter;
     this._filters = filters || [];
     this._available = typeof console !== 'undefined' && !!console.log;
+
+    this.enabled = this._config?.enabled === false ? false : true;
+    this.priority = this._config?.priority;
   }
 
   public dispose(): void {
     // No resources to dispose for console appender
-  }
-
-  public getPriority(): number | undefined {
-    return this._config?.priority;
-  }
-
-  public getSupportedLevels(): LogLevelType[] {
-    return SUPPORTED_LEVELS;
   }
 
   public write(event: LogEvent): void {
@@ -72,4 +80,16 @@ class ConsoleAppender implements Appender {
   }
 }
 
-export { ConsoleAppender };
+class ConsoleAppenderFactory implements PluginFactory<ConsoleAppenderConfig, ConsoleAppender> {
+  public name = NAME;
+  public version = VERSION;
+  public kind = KIND;
+
+  public create(config: AppenderConfig): ConsoleAppender {
+    const appender = new ConsoleAppender();
+    appender.init(config);
+    return appender;
+  }
+}
+
+export { ConsoleAppender, ConsoleAppenderFactory };

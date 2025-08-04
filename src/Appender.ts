@@ -6,10 +6,11 @@ import type { LogLevelType } from './LogLevel.ts';
 import type { Plugin } from './Plugin.ts';
 
 export interface Appender extends Plugin {
-  init(config: AppenderConfig, formatter?: Formatter, filters?: Filter[]): void;
+  readonly supportedLevels: Set<LogLevelType>;
+  enabled: boolean;
+  priority?: number;
 
-  getPriority(): number | undefined;
-  getSupportedLevels(): LogLevelType[];
+  init(config: AppenderConfig, formatter?: Formatter, filters?: Filter[]): void;
 
   write(logEvent: LogEvent): void;
   flush(): void;

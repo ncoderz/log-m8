@@ -9,16 +9,22 @@ function main() {
     appenders: [
       {
         name: 'console',
-        formatter: 'default',
+        formatter: {
+          name: 'default',
+          color: true,
+          // json: true,
+          // timestampFormat: 'hh:mm:ss.SSS',
+          // format: ['{timestamp} [{level}] {message}', '{data}'],
+        },
       },
-    ],
-    filters: [],
-    formatters: [
       {
-        name: 'default',
-        color: true,
-        // timestampFormat: 'hh:mm:ss.SSS',
-        // format: ['{timestamp} [{level}] {message}', '{data}'],
+        name: 'file',
+        formatter: {
+          name: 'default',
+          // json: true,
+        },
+        filename: 'app.log',
+        append: false,
       },
     ],
   });

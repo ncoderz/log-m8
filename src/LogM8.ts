@@ -1,8 +1,9 @@
 import { Enum } from '@ncoderz/superenum';
 
-import { ConsoleAppender } from './appenders/ConsoleAppender.ts';
-import { DefaultFormatter } from './formatters/DefaultFormatter.ts';
-import type { Appender, Filter, Formatter } from './index.ts';
+import { ConsoleAppenderFactory } from './appenders/ConsoleAppender.ts';
+import { FileAppenderFactory } from './appenders/FileAppender.ts';
+import { DefaultFormatterFactory } from './formatters/DefaultFormatter.ts';
+import type { Appender, AppenderConfig, Filter, Formatter, PluginConfig } from './index.ts';
 import type { Log } from './Log.ts';
 import type { LogContext } from './LogContext.ts';
 import type { LogEvent } from './LogEvent.ts';
@@ -10,12 +11,20 @@ import type { LoggingConfig } from './LoggingConfig.ts';
 import type { LogImpl } from './LogImpl.ts';
 import { LogLevel, type LogLevelType } from './LogLevel.ts';
 import type { Plugin } from './Plugin.ts';
+import type { PluginFactory } from './PluginFactory.ts';
 import { PluginKind, type PluginKindType } from './PluginKind.ts';
 
+const DEFAULT_APPENDERS = [
+  {
+    name: 'console',
+    formatter: 'default',
+  },
+];
+
 class LogM8 {
-  private _plugins: Map<string, Plugin> = new Map();
+  private _pluginFactories: Map<string, PluginFactory> = new Map();
+  private _plugins: Plugin[] = [];
   private _appenders: Appender[] = [];
-  private _formatters: Formatter[] = [];
   private _loggers: Map<string, Log> = new Map();
 
   private _defaultLevel: LogLevelType = LogLevel.info;
@@ -23,13 +32,14 @@ class LogM8 {
   private _logLevelValues = Enum(LogLevel).values();
 
   constructor() {
-    // Register built-in plugins
+    // Register built-in plugin factories
 
     // Appenders
-    this.registerPlugin(new ConsoleAppender());
+    this.registerPluginFactory(new ConsoleAppenderFactory());
+    this.registerPluginFactory(new FileAppenderFactory());
 
     // Formatters
-    this.registerPlugin(new DefaultFormatter());
+    this.registerPluginFactory(new DefaultFormatterFactory());
   }
 
   public init(config?: LoggingConfig): void {
@@ -47,70 +57,44 @@ class LogM8 {
       logger.setLevel(l);
     }
 
-    // Set up filters
-    for (const filterConfig of config.filters ?? []) {
-      const filter = this._plugins.get(filterConfig.name) as Filter;
-      if (filter) {
-        filter.init(filterConfig);
-      } else {
-        if (console && console.log) {
-          console.log(`LogM8: Filter '${filterConfig.name}' not found.`);
-        }
-      }
-    }
-
-    // Set up formatters
-    for (const formatterConfig of config.formatters ?? []) {
-      const formatter = this._plugins.get(formatterConfig.name) as Formatter;
-      if (formatter) {
-        formatter.init(formatterConfig);
-
-        this._formatters.push(formatter);
-      } else {
-        if (console && console.log) {
-          console.log(`LogM8: Formatter '${formatterConfig.name}' not found.`);
-        }
-      }
-    }
-
     // Set up appenders
-    const appenderConfigs = config.appenders ?? [
-      {
-        name: 'console',
-        formatter: 'default',
-      },
-    ];
+    const appenderConfigs = config.appenders ?? DEFAULT_APPENDERS;
     for (const appenderConfig of appenderConfigs) {
-      const appender = this._plugins.get(appenderConfig.name) as Appender;
-      if (appender) {
-        const formatter = appenderConfig.formatter
-          ? (this._plugins.get(appenderConfig.formatter) as Formatter)
-          : undefined;
+      const appender = this._createPlugin(PluginKind.appender, appenderConfig) as Appender;
 
-        const filters: Filter[] = [];
-        for (const filterName of appenderConfig.filters ?? []) {
-          const filter = this._plugins.get(filterName) as Filter | undefined;
-          if (filter) {
-            filters.push(filter);
-          } else {
-            if (console && console.log) {
-              console.log(
-                `LogM8: Filter '${filterName}' not found for appender ${appenderConfig.name}.`,
-              );
-            }
+      const formatter = appenderConfig.formatter
+        ? (this._createPlugin(PluginKind.formatter, appenderConfig.formatter) as Formatter)
+        : undefined;
+
+      const filters: Filter[] = [];
+      const ac = appenderConfig as AppenderConfig;
+      for (const filterConfig of ac.filters ?? []) {
+        const filter = this._createPlugin(PluginKind.filter, filterConfig);
+        if (filter) {
+          filters.push(filter as Filter);
+        } else {
+          if (console && console.log) {
+            console.log(
+              `LogM8: Filter '${filterConfig}' not found for appender ${appenderConfig.name}.`,
+            );
           }
         }
-
-        appender.init(appenderConfig, formatter, filters);
-        this._appenders.push(appender);
-      } else {
-        if (console && console.log) {
-          console.log(`LogM8: Appender '${appenderConfig.name}' not found.`);
-        }
       }
+
+      appender.init(appenderConfig, formatter, filters);
+      this._appenders.push(appender);
     }
+
     // Sort the appenders by their priority
     this._sortAppenders();
+  }
+
+  public dispose(): void {
+    // Reset to initial state (flushes appenders, disposes all plugins)
+    this._reset();
+
+    // Deregister all plugin factories
+    this._pluginFactories.clear();
   }
 
   public getLogger(name: string | string[]): Log {
@@ -151,18 +135,13 @@ class LogM8 {
   public enableAppender(name: string): void {
     const appender = this._getAppender(name);
     if (!appender) return;
-    if (this._appenders.some((a) => a.name === appender.name)) return;
-    this._appenders.push(appender);
-
-    // Sort the appenders by their priority
-    this._sortAppenders();
+    appender.enabled = true;
   }
 
   public disableAppender(name: string): void {
-    const index = this._appenders.findIndex((appender) => appender.name === name);
-    if (index !== -1) {
-      this._appenders.splice(index, 1);
-    }
+    const appender = this._getAppender(name);
+    if (!appender) return;
+    appender.enabled = false;
   }
 
   public flushAppender(name: string): void {
@@ -193,11 +172,11 @@ class LogM8 {
     // TODO: Flush any buffered logs
   }
 
-  public registerPlugin(plugin: Plugin): void {
-    if (this._plugins.has(plugin.name)) {
-      throw new Error(`LogM8: Plugin with name ${plugin.name} is already registered.`);
+  public registerPluginFactory(pluginFactory: PluginFactory): void {
+    if (this._pluginFactories.has(pluginFactory.name)) {
+      throw new Error(`LogM8: Plugin with name ${pluginFactory.name} is already registered.`);
     }
-    this._plugins.set(plugin.name, plugin);
+    this._pluginFactories.set(pluginFactory.name, pluginFactory);
   }
 
   private _log(
@@ -248,6 +227,8 @@ class LogM8 {
   private _processLogEvent(event: LogEvent): void {
     for (const appender of this._appenders) {
       try {
+        if (!appender.enabled) continue;
+        if (!appender.supportedLevels.has(event.level)) continue;
         appender.write(event);
       } catch (err) {
         if (console && console.log) {
@@ -255,51 +236,54 @@ class LogM8 {
         }
       }
     }
+  }
 
-    // Clear the formatter caches
-    for (const formatter of this._formatters) {
-      try {
-        formatter.clearCache();
-      } catch (err) {
-        if (console && console.log) {
-          console.log(`LogM8: Failed to clear cache for formatter '${formatter.name}':`, err);
-        }
-      }
+  private _createPlugin(kind: PluginKindType, nameOrConfig: string | PluginConfig): Plugin {
+    const name = typeof nameOrConfig === 'string' ? nameOrConfig : nameOrConfig.name;
+    const config = typeof nameOrConfig === 'string' ? { name } : nameOrConfig;
+    const pluginFactory = this._getPluginFactory(name, kind);
+    if (!pluginFactory) {
+      throw new Error(`LogM8: Plugin factory kind '${kind}' with name '${name}' not found.`);
     }
+    const plugin = pluginFactory.create(config);
+
+    this._plugins.push(plugin);
+
+    return plugin;
+  }
+
+  private _getPluginFactory(name: string, kind: PluginKindType): PluginFactory | undefined {
+    const pluginFactory = this._pluginFactories.get(name);
+    if (!pluginFactory || kind !== pluginFactory.kind) return;
+    return pluginFactory;
   }
 
   private _getAppender(name: string): Appender | undefined {
-    return this._getPlugin(name, PluginKind.appender) as Appender;
-  }
-
-  private _getFormatter(name: string): Formatter | undefined {
-    return this._getPlugin(name, PluginKind.formatter) as Formatter;
-  }
-
-  private _getFilter(name: string): Filter | undefined {
-    return this._getPlugin(name, PluginKind.filter) as Filter;
-  }
-
-  private _getPlugin(name: string, kind: PluginKindType): Plugin | undefined {
-    const plugin = this._plugins.get(name);
-    if (!plugin || kind !== PluginKind.appender) return;
-    return plugin;
+    return this._appenders.find((appender) => appender.name === name);
   }
 
   private _sortAppenders(): void {
     this._appenders.sort((a, b) => {
-      const aPriority = a?.getPriority() ?? 0;
-      const bPriority = b?.getPriority() ?? 0;
+      const aPriority = a?.priority ?? 0;
+      const bPriority = b?.priority ?? 0;
       return bPriority - aPriority; // Higher priority first
     });
   }
 
   private _reset(): void {
+    // FLush all appenders before disposing
+    this.flushAppenders();
+
     this._appenders = [];
-    this._formatters = [];
     this._loggers.clear();
     this._defaultLevel = LogLevel.info;
     this._asyncBufferingEnabled = false;
+
+    // Dispose all plugins
+    this._plugins.forEach((plugin) => {
+      plugin.dispose();
+    });
+    this._plugins = [];
   }
 }
 

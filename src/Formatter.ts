@@ -6,6 +6,4 @@ export interface Formatter extends Plugin {
   init(config: FormatterConfig): void;
 
   format(logEvent: LogEvent): unknown[];
-
-  clearCache(): void;
 }

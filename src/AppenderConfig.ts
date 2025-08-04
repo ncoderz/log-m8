@@ -1,7 +1,10 @@
+import type { FilterConfig } from './FilterConfig.ts';
+import type { FormatterConfig } from './FormatterConfig.ts';
 import type { PluginConfig } from './PluginConfig.ts';
 
 export interface AppenderConfig extends PluginConfig {
-  priority?: number; // Optional priority for the appender
-  formatter?: string;
-  filters?: string[];
+  enabled?: boolean;
+  priority?: number;
+  formatter?: string | FormatterConfig;
+  filters?: (string | FilterConfig)[];
 }
