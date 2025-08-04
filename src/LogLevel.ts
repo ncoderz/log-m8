@@ -1,5 +1,10 @@
 import { Enum, type EnumType } from '@ncoderz/superenum';
 
+/**
+ * Enumeration of supported log levels, ordered by severity.
+ * 'off' disables logging; 'fatal' through 'trace' represent increasing detail.
+ * Includes 'track' for analytics-specific events.
+ */
 const LogLevel = Enum.fromArray([
   'off', // No logging
 
@@ -12,6 +17,9 @@ const LogLevel = Enum.fromArray([
   'trace',
 ] as const);
 
+/**
+ * Type of LogLevel
+ */
 export type LogLevelType = EnumType<typeof LogLevel>;
 
 export { LogLevel };

@@ -1,4 +1,14 @@
+/**
+ * Configuration options for initializing a plugin.
+ */
 export interface PluginConfig {
+  /**
+   * The plugin's unique name.
+   */
   name: string;
-  [key: string]: unknown; // Additional plugin-specific settings
+
+  /**
+   * Additional plugin-specific settings.
+   */
+  [key: string]: unknown;
 }

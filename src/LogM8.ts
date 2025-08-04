@@ -21,6 +21,10 @@ const DEFAULT_APPENDERS = [
   },
 ];
 
+/**
+ * Core logging manager that configures and dispatches log events to appenders.
+ * Manages loggers, appenders, formatters, and filters.
+ */
 class LogM8 {
   private _pluginManager: PluginManager = new PluginManager();
   private _appenders: Appender[] = [];
@@ -40,6 +44,10 @@ class LogM8 {
     this._pluginManager.registerPluginFactory(new DefaultFormatterFactory());
   }
 
+  /**
+   * Initializes logging with the provided configuration, sets default levels, loggers, and appenders.
+   * @param config - Optional logging configuration.
+   */
   public init(config?: LoggingConfig): void {
     config = Object.assign({}, config);
 
@@ -93,6 +101,9 @@ class LogM8 {
     this._sortAppenders();
   }
 
+  /**
+   * Disposes the logging system, flushing appenders and deregistering plugin factories.
+   */
   public dispose(): void {
     // Reset to initial state (flushes appenders, disposes all plugins)
     this._reset();
@@ -101,6 +112,11 @@ class LogM8 {
     this._pluginManager.clearFactories();
   }
 
+  /**
+   * Returns or creates a logger instance by name (or name segments).
+   * @param name - Logger name or array of name segments.
+   * @returns The logger instance for the given name.
+   */
   public getLogger(name: string | string[]): Log {
     let nameStr: string = name as string;
     if (Array.isArray(name)) {
@@ -136,18 +152,30 @@ class LogM8 {
     return logger;
   }
 
+  /**
+   * Enables the specified appender by its name.
+   * @param name - The name of the appender to enable.
+   */
   public enableAppender(name: string): void {
     const appender = this._getAppender(name);
     if (!appender) return;
     appender.enabled = true;
   }
 
+  /**
+   * Disables the specified appender by its name.
+   * @param name - The name of the appender to disable.
+   */
   public disableAppender(name: string): void {
     const appender = this._getAppender(name);
     if (!appender) return;
     appender.enabled = false;
   }
 
+  /**
+   * Flushes the specified appender, catching and logging any errors.
+   * @param name - The name of the appender to flush.
+   */
   public flushAppender(name: string): void {
     const appender = this._getAppender(name);
     if (!appender) return;
@@ -160,12 +188,19 @@ class LogM8 {
     }
   }
 
+  /**
+   * Flushes all configured appenders.
+   */
   public flushAppenders(): void {
     for (const appender of this._appenders) {
       this.flushAppender(appender.name);
     }
   }
 
+  /**
+   * Registers a plugin factory for custom plugins.
+   * @param pluginFactory - The plugin factory to register.
+   */
   public registerPluginFactory(pluginFactory: PluginFactory): void {
     this._pluginManager.registerPluginFactory(pluginFactory);
   }
@@ -224,8 +259,6 @@ class LogM8 {
       }
     }
   }
-
-  // ...existing code...
 
   private _getAppender(name: string): Appender | undefined {
     return this._appenders.find((appender) => appender.name === name);
