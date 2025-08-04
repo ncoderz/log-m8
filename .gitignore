@@ -3,6 +3,7 @@
 /coverage
 /resources/output
 node_modules
+*.log
 
 
 # VSCODE

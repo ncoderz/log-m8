@@ -21,7 +21,8 @@ function main() {
         name: 'file',
         formatter: {
           name: 'default',
-          // json: true,
+          json: true,
+          timestampFormat: 'hh:mm:ss.SSS',
         },
         filename: 'app.log',
         append: false,

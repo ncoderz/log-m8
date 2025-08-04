@@ -11,6 +11,7 @@ import { PluginKind } from '../PluginKind.ts';
 const DEFAULT_FORMAT = ['{timestamp} {LEVEL} [{logger}] {message}', '{data}'];
 const DEFAULT_FORMAT_JSON = ['{timestamp}', '{level}', '{logger}', '{message}', '{data}'];
 const DEFAULT_TIMESTAMP_FORMAT = 'hh:mm:ss.SSS';
+const DEFAULT_TIMESTAMP_FORMAT_JSON = 'iso';
 
 export interface DefaultFormatterConfig extends FormatterConfig {
   format?: string | string[];
@@ -79,7 +80,9 @@ class DefaultFormatter implements Formatter {
       }
     }
 
-    this._timestampFormat = this._config.timestampFormat ?? DEFAULT_TIMESTAMP_FORMAT;
+    this._timestampFormat =
+      this._config.timestampFormat ??
+      (this._jsonEnabled ? DEFAULT_TIMESTAMP_FORMAT_JSON : DEFAULT_TIMESTAMP_FORMAT);
 
     // Build the level map for quick access
     const maxLevelLength = Math.max(

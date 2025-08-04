@@ -7,9 +7,4 @@ export interface LoggingConfig {
     [key: string]: LogLevelType | undefined;
   };
   appenders?: AppenderConfig[];
-  asyncBuffering?: {
-    enabled: boolean;
-    messageCount: number;
-    timeout: number;
-  };
 }

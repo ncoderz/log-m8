@@ -3,16 +3,16 @@ import { Enum } from '@ncoderz/superenum';
 import { ConsoleAppenderFactory } from './appenders/ConsoleAppender.ts';
 import { FileAppenderFactory } from './appenders/FileAppender.ts';
 import { DefaultFormatterFactory } from './formatters/DefaultFormatter.ts';
-import type { Appender, AppenderConfig, Filter, Formatter, PluginConfig } from './index.ts';
+import type { Appender, AppenderConfig, Filter, Formatter } from './index.ts';
 import type { Log } from './Log.ts';
 import type { LogContext } from './LogContext.ts';
 import type { LogEvent } from './LogEvent.ts';
 import type { LoggingConfig } from './LoggingConfig.ts';
 import type { LogImpl } from './LogImpl.ts';
 import { LogLevel, type LogLevelType } from './LogLevel.ts';
-import type { Plugin } from './Plugin.ts';
 import type { PluginFactory } from './PluginFactory.ts';
-import { PluginKind, type PluginKindType } from './PluginKind.ts';
+import { PluginKind } from './PluginKind.ts';
+import { PluginManager } from './PluginManager.ts';
 
 const DEFAULT_APPENDERS = [
   {
@@ -22,24 +22,22 @@ const DEFAULT_APPENDERS = [
 ];
 
 class LogM8 {
-  private _pluginFactories: Map<string, PluginFactory> = new Map();
-  private _plugins: Plugin[] = [];
+  private _pluginManager: PluginManager = new PluginManager();
   private _appenders: Appender[] = [];
   private _loggers: Map<string, Log> = new Map();
 
   private _defaultLevel: LogLevelType = LogLevel.info;
-  private _asyncBufferingEnabled: boolean = false;
   private _logLevelValues = Enum(LogLevel).values();
 
   constructor() {
     // Register built-in plugin factories
 
     // Appenders
-    this.registerPluginFactory(new ConsoleAppenderFactory());
-    this.registerPluginFactory(new FileAppenderFactory());
+    this._pluginManager.registerPluginFactory(new ConsoleAppenderFactory());
+    this._pluginManager.registerPluginFactory(new FileAppenderFactory());
 
     // Formatters
-    this.registerPluginFactory(new DefaultFormatterFactory());
+    this._pluginManager.registerPluginFactory(new DefaultFormatterFactory());
   }
 
   public init(config?: LoggingConfig): void {
@@ -60,16 +58,22 @@ class LogM8 {
     // Set up appenders
     const appenderConfigs = config.appenders ?? DEFAULT_APPENDERS;
     for (const appenderConfig of appenderConfigs) {
-      const appender = this._createPlugin(PluginKind.appender, appenderConfig) as Appender;
+      const appender = this._pluginManager.createPlugin(
+        PluginKind.appender,
+        appenderConfig,
+      ) as Appender;
 
       const formatter = appenderConfig.formatter
-        ? (this._createPlugin(PluginKind.formatter, appenderConfig.formatter) as Formatter)
+        ? (this._pluginManager.createPlugin(
+            PluginKind.formatter,
+            appenderConfig.formatter,
+          ) as Formatter)
         : undefined;
 
       const filters: Filter[] = [];
       const ac = appenderConfig as AppenderConfig;
       for (const filterConfig of ac.filters ?? []) {
-        const filter = this._createPlugin(PluginKind.filter, filterConfig);
+        const filter = this._pluginManager.createPlugin(PluginKind.filter, filterConfig);
         if (filter) {
           filters.push(filter as Filter);
         } else {
@@ -94,7 +98,7 @@ class LogM8 {
     this._reset();
 
     // Deregister all plugin factories
-    this._pluginFactories.clear();
+    this._pluginManager.clearFactories();
   }
 
   public getLogger(name: string | string[]): Log {
@@ -162,21 +166,8 @@ class LogM8 {
     }
   }
 
-  public enableAsync() {
-    this._asyncBufferingEnabled = true;
-  }
-
-  public disableAsync() {
-    this._asyncBufferingEnabled = false;
-
-    // TODO: Flush any buffered logs
-  }
-
   public registerPluginFactory(pluginFactory: PluginFactory): void {
-    if (this._pluginFactories.has(pluginFactory.name)) {
-      throw new Error(`LogM8: Plugin with name ${pluginFactory.name} is already registered.`);
-    }
-    this._pluginFactories.set(pluginFactory.name, pluginFactory);
+    this._pluginManager.registerPluginFactory(pluginFactory);
   }
 
   private _log(
@@ -198,12 +189,8 @@ class LogM8 {
       timestamp: new Date(),
     };
 
-    if (this._asyncBufferingEnabled) {
-      // TODO - pass to async buffer
-    } else {
-      // Process the log event immediately
-      this._processLogEvent(logEvent);
-    }
+    // Process the log event immediately
+    this._processLogEvent(logEvent);
   }
 
   private _setLevel(logger: LogImpl, level: LogLevelType): void {
@@ -238,25 +225,7 @@ class LogM8 {
     }
   }
 
-  private _createPlugin(kind: PluginKindType, nameOrConfig: string | PluginConfig): Plugin {
-    const name = typeof nameOrConfig === 'string' ? nameOrConfig : nameOrConfig.name;
-    const config = typeof nameOrConfig === 'string' ? { name } : nameOrConfig;
-    const pluginFactory = this._getPluginFactory(name, kind);
-    if (!pluginFactory) {
-      throw new Error(`LogM8: Plugin factory kind '${kind}' with name '${name}' not found.`);
-    }
-    const plugin = pluginFactory.create(config);
-
-    this._plugins.push(plugin);
-
-    return plugin;
-  }
-
-  private _getPluginFactory(name: string, kind: PluginKindType): PluginFactory | undefined {
-    const pluginFactory = this._pluginFactories.get(name);
-    if (!pluginFactory || kind !== pluginFactory.kind) return;
-    return pluginFactory;
-  }
+  // ...existing code...
 
   private _getAppender(name: string): Appender | undefined {
     return this._appenders.find((appender) => appender.name === name);
@@ -277,13 +246,9 @@ class LogM8 {
     this._appenders = [];
     this._loggers.clear();
     this._defaultLevel = LogLevel.info;
-    this._asyncBufferingEnabled = false;
 
     // Dispose all plugins
-    this._plugins.forEach((plugin) => {
-      plugin.dispose();
-    });
-    this._plugins = [];
+    this._pluginManager.disposePlugins();
   }
 }
 

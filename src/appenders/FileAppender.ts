@@ -1,3 +1,6 @@
+import type { WriteStream } from 'fs';
+import { createWriteStream } from 'fs';
+
 import type { Appender } from '../Appender.ts';
 import type { AppenderConfig } from '../AppenderConfig.ts';
 import type { Filter } from '../Filter.ts';
@@ -7,7 +10,7 @@ import { LogLevel, type LogLevelType } from '../LogLevel.ts';
 import type { PluginFactory } from '../PluginFactory.ts';
 import { PluginKind } from '../PluginKind.ts';
 
-const NAME = 'console';
+const NAME = 'file';
 const VERSION = '1.0.0';
 const KIND = PluginKind.appender;
 
@@ -21,11 +24,12 @@ const SUPPORTED_LEVELS = new Set<LogLevelType>([
   LogLevel.trace,
 ]);
 
-interface ConsoleAppenderConfig extends AppenderConfig {
-  //
+interface FileAppenderConfig extends AppenderConfig {
+  filename: string;
+  append?: boolean;
 }
 
-class ConsoleAppender implements Appender {
+class FileAppender implements Appender {
   public name = NAME;
   public version = VERSION;
   public kind = KIND;
@@ -34,36 +38,28 @@ class ConsoleAppender implements Appender {
   public enabled = true;
   public priority?: number;
 
-  private _config?: AppenderConfig;
+  private _config?: FileAppenderConfig;
   private _formatter?: Formatter;
   private _filters: Filter[] = [];
-  private _available = true;
-
-  private off = () => {};
-  private fatal = console.error ? console.error.bind(console) : console.log.bind(console);
-  private error = console.error ? console.error.bind(console) : console.log.bind(console);
-  private warn = console.warn ? console.warn.bind(console) : console.log.bind(console);
-  private info = console.info ? console.info.bind(console) : console.log.bind(console);
-  private debug = console.debug ? console.debug.bind(console) : console.log.bind(console);
-  private trace = console.trace ? console.trace.bind(console) : console.log.bind(console);
-  private track = console.log.bind(console);
+  private _stream?: WriteStream;
 
   public init(config: AppenderConfig, formatter?: Formatter, filters?: Filter[]): void {
-    this._config = config;
+    this._config = config as FileAppenderConfig;
     this._formatter = formatter;
     this._filters = filters || [];
-    this._available = typeof console !== 'undefined' && !!console.log;
+    const flags = this._config.append ? 'a' : 'w';
+    this._stream = createWriteStream(this._config.filename, { flags });
 
     this.enabled = this._config?.enabled === false ? false : true;
     this.priority = this._config?.priority;
   }
 
   public dispose(): void {
-    // No resources to dispose for console appender
+    this._stream?.end();
   }
 
   public write(event: LogEvent): void {
-    if (!this._available) return;
+    if (!this._stream) return;
 
     // Filter
     for (const filter of this._filters) {
@@ -76,24 +72,34 @@ class ConsoleAppender implements Appender {
     const data = this._formatter ? this._formatter.format(event) : [event];
 
     // Log
-    this[event.level](...data);
+    const message = data
+      .map((d) => {
+        if (typeof d === 'string') return d;
+        try {
+          return JSON.stringify(d, null, 2);
+        } catch (_e) {
+          return String(d);
+        }
+      })
+      .join(' ');
+    this._stream.write(message + '\n');
   }
 
   public flush(): void {
-    // No-op for console appender
+    // No-op for file appender; data is flushed on stream end.
   }
 }
 
-class ConsoleAppenderFactory implements PluginFactory<ConsoleAppenderConfig, ConsoleAppender> {
+class FileAppenderFactory implements PluginFactory<FileAppenderConfig, FileAppender> {
   public name = NAME;
   public version = VERSION;
   public kind = KIND;
 
-  public create(config: AppenderConfig): ConsoleAppender {
-    const appender = new ConsoleAppender();
+  public create(config: AppenderConfig): FileAppender {
+    const appender = new FileAppender();
     appender.init(config);
     return appender;
   }
 }
 
-export { ConsoleAppender, ConsoleAppenderFactory };
+export { FileAppender, FileAppenderFactory };
