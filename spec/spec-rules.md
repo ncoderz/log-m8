@@ -58,3 +58,6 @@ Each specification file consists of the following:
   - ui files are stored in /spec/ui
 - 13. Acceptance Criteria
   - How requirements will be verified to have been implemented
+- References
+  - Links to child specification files, e.g.
+    - API: [/spec/spec-api.md](/spec/spec-api.md)
