@@ -115,6 +115,9 @@ class LogM8 {
     // Reset to initial state (flushes appenders, disposes all plugins)
     this._reset();
 
+    // Clear the log buffer
+    this._logBuffer = [];
+
     // Deregister all plugin factories
     this._pluginManager.clearFactories();
 
