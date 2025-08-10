@@ -7,6 +7,10 @@
   "files.eol": "\n",
   "files.autoSave": "onFocusChange",
   "files.trimTrailingWhitespace": true,
+  "eslint.format.enable": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
   "search.exclude": {
     "**/.yarn": true,
     "**/dist": true
