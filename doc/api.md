@@ -148,13 +148,13 @@ Contextual data automatically included with all log events from this logger.
 
 ##### Level Flags (readonly)
 
-- `isFatal: boolean` - True when logger's current level equals 'fatal'
-- `isError: boolean` - True when logger's current level equals 'error'
-- `isWarn: boolean` - True when logger's current level equals 'warn'
-- `isInfo: boolean` - True when logger's current level equals 'info'
-- `isDebug: boolean` - True when logger's current level equals 'debug'
-- `isTrace: boolean` - True when logger's current level equals 'trace'
-- `isTrack: boolean` - True when logger's current level equals 'track'
+- `isFatal: boolean` - True when fatal events are enabled (level >= 'fatal')
+- `isError: boolean` - True when error events are enabled (level >= 'error')
+- `isWarn: boolean` - True when warn events are enabled (level >= 'warn')
+- `isInfo: boolean` - True when info events are enabled (level >= 'info')
+- `isDebug: boolean` - True when debug events are enabled (level >= 'debug')
+- `isTrack: boolean` - True when track events are enabled (level >= 'track')
+- `isTrace: boolean` - True when trace events are enabled (level >= 'trace')
 - `isEnabled: boolean` - True when logging is enabled (false only when level is 'off')
 
 **Note:** These flags indicate enablement for that severity level and above.
@@ -169,8 +169,8 @@ error(message: string | unknown, ...data: unknown[]): void
 warn(message: string | unknown, ...data: unknown[]): void
 info(message: string | unknown, ...data: unknown[]): void
 debug(message: string | unknown, ...data: unknown[]): void
-trace(message: string | unknown, ...data: unknown[]): void
 track(message: string | unknown, ...data: unknown[]): void
+trace(message: string | unknown, ...data: unknown[]): void
 ```
 
 Each method logs a message at the corresponding severity level.
@@ -185,12 +185,12 @@ logger.info('User logged in', { userId: 123, timestamp: Date.now() });
 logger.error('Database connection failed', { host: 'localhost', port: 5432 });
 ```
 
-##### `setLevel(level: string): void`
+##### `setLevel(level: LogLevelType): void`
 
 Updates the logger's severity level threshold.
 
 **Parameters:**
-- `level` - New logging level name (e.g., 'info', 'debug', 'off')
+- `level` - New logging level (one of: 'off' | 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'track' | 'trace')
 
 ##### `setContext(context: LogContext): void`
 
@@ -218,8 +218,8 @@ Main configuration object for initializing the logging system.
 
 ```typescript
 interface LoggingConfig {
-  level?: string;                    // Default log level for all loggers
-  loggers?: Record<string, string>;  // Per-logger level overrides by name
+  level?: LogLevelType;              // Default log level for all loggers
+  loggers?: Record<string, LogLevelType | undefined>;  // Per-logger level overrides by name
   appenders?: AppenderConfig[];      // Appender configurations
 }
 ```
@@ -246,7 +246,7 @@ Configuration for appender instances.
 ```typescript
 interface AppenderConfig extends PluginConfig {
   enabled?: boolean;                 // Enable/disable appender
-  priority?: number;                 // Execution priority (higher = first)
+  priority?: number;                 // Execution priority (higher values run first)
   formatter?: string | FormatterConfig; // Formatter name or config
   filters?: (string | FilterConfig)[]; // Filter names or configs
 }
@@ -507,12 +507,12 @@ enum LogLevel {
   warn = 'warn',     // Potentially problematic situations
   info = 'info',     // General informational messages
   debug = 'debug',   // Detailed diagnostic information
-  track = 'track',   // Analytics and behavior tracking
+  track = 'track',   // Analytics and behavior tracking (between debug and trace)
   trace = 'trace'    // Most detailed execution information
 }
 ```
 
-Events are emitted when their level index is <= logger's level index.
+Events are emitted when their level index is <= the logger's current level index. The hierarchy is: off < fatal < error < warn < info < debug < track < trace.
 
 ---
 

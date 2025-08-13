@@ -1,9 +1,10 @@
+import { Enum } from '@ncoderz/superenum';
 import { describe, expect, it } from 'vitest';
 
 import type { Filter } from '../../src/Filter.ts';
 import type { FilterConfig } from '../../src/FilterConfig.ts';
 import type { LogEvent } from '../../src/LogEvent.ts';
-import { LogLevel } from '../../src/LogLevel.ts';
+import { LogLevel, type LogLevelType } from '../../src/LogLevel.ts';
 import { LogM8 } from '../../src/LogM8.ts';
 import type { PluginFactory } from '../../src/PluginFactory.ts';
 import { PluginKind } from '../../src/PluginKind.ts';
@@ -66,23 +67,26 @@ describe('Filter Usability Tests', () => {
       name = 'level';
       version = '1.0.0';
       kind = PluginKind.filter;
-      private minLevel = LogLevel.info;
+      private minLevel: LogLevelType = LogLevel.info;
 
       init(config: FilterConfig): void {
-        if (config.level && typeof config.level === 'string') {
-          this.minLevel = config.level;
+        const lvl = (config as Record<string, unknown>).level;
+        if (typeof lvl === 'string') {
+          const resolved = Enum(LogLevel).fromValue(lvl);
+          if (resolved) this.minLevel = resolved;
         }
       }
 
       dispose(): void {}
 
       shouldLog(logEvent: LogEvent): boolean {
-        const levels = [
+        const levels: LogLevelType[] = [
           LogLevel.fatal,
           LogLevel.error,
           LogLevel.warn,
           LogLevel.info,
           LogLevel.debug,
+          LogLevel.track,
           LogLevel.trace,
         ];
         const eventIndex = levels.indexOf(logEvent.level as (typeof levels)[number]);

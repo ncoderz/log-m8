@@ -81,17 +81,6 @@ export interface Log {
   debug(message: string | unknown, ...data: unknown[]): void;
 
   /**
-   * Logs a message at trace severity level.
-   *
-   * Trace events provide the most detailed execution information,
-   * typically used for fine-grained debugging and performance analysis.
-   *
-   * @param message - Primary message or serializable object to log
-   * @param data - Additional context data to include with the log event
-   */
-  trace(message: string | unknown, ...data: unknown[]): void;
-
-  /**
    * Logs a message at track severity level.
    *
    * Track events are specifically designed for analytics and user behavior
@@ -101,6 +90,17 @@ export interface Log {
    * @param data - Additional context data to include with the log event
    */
   track(message: string | unknown, ...data: unknown[]): void;
+
+  /**
+   * Logs a message at trace severity level.
+   *
+   * Trace events provide the most detailed execution information,
+   * typically used for fine-grained debugging and performance analysis.
+   *
+   * @param message - Primary message or serializable object to log
+   * @param data - Additional context data to include with the log event
+   */
+  trace(message: string | unknown, ...data: unknown[]): void;
 
   /**
    * True when logger's current level enables fatal severity logging.
@@ -133,16 +133,16 @@ export interface Log {
   readonly isDebug: boolean;
 
   /**
-   * True when logger's current level enables trace severity logging.
-   * When true, trace() calls will emit log events.
-   */
-  readonly isTrace: boolean;
-
-  /**
    * True when logger's current level enables track severity logging.
    * When true, track() calls will emit log events.
    */
   readonly isTrack: boolean;
+
+  /**
+   * True when logger's current level enables trace severity logging.
+   * When true, trace() calls will emit log events.
+   */
+  readonly isTrace: boolean;
 
   /**
    * True when logging is enabled for this logger.

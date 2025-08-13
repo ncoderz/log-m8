@@ -1,6 +1,6 @@
 {
   "name": "log-m8",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Logging system for TypeScript / JavaScript",
   "author": "RA Sewell <richard.sewell@ncoderz.com>",
   "license": "BSD-2-Clause",
@@ -17,6 +17,11 @@
       "import": "./dist/browser/superenum.global.js",
       "require": "./dist/browser/superenum.global.js"
     },
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    },
     "./esm": {
       "import": "./dist/index.js",
       "require": "./dist/index.js"
@@ -24,11 +29,6 @@
     "./cjs": {
       "import": "./dist/index.cjs",
       "require": "./dist/index.cjs"
-    },
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "default": "./dist/index.js"
     }
   },
   "files": [

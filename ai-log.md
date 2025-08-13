@@ -1,3 +1,26 @@
+## 2025-08-14
+
+## Correct 'track' vs 'trace' ordering across docs and interfaces
+
+Fixes instances where 'trace' was listed before 'track'. Ensures consistent level order: off < fatal < error < warn < info < debug < track < trace in specs and docs, and orders logger method listings accordingly.
+
+- **Affects:** `[code]` `[spec]` `[doc]`
+- **Issue:** [#0](https://actual.link.to.issue.in.github)
+- **Pull Request:** [#0](https://actual.link.to.pull-request.in.github)
+
+### src/Log.ts
+
+- `Comment ~` Reordered method declarations to list track() before trace() to match level hierarchy.
+
+### spec/spec-appenders-console.md
+
+- `Spec ~` Corrected FR-CNS-010 mapping list to put track before trace.
+
+### doc/api.md
+
+- `Doc ~` Reordered Level Flags to list isTrack before isTrace.
+- `Doc ~` Reordered Logging Methods to list track() before trace().
+
 # 2025-08-13
 
 ## Corrected specification mismatches with implementation
@@ -99,3 +122,19 @@ Significantly reduced the filter specification complexity to align with the actu
 - `Test +` Helpful defaults and edge case handling
 - `Test +` Filter composition and chaining patterns
 - `Test +` Clear error messages for common mistakes
+
+## Fix API docs: level flags semantics, setLevel signature, and config types
+
+Corrects doc/api.md to reflect actual behavior: boolean level flags indicate enablement at/above the level, setLevel accepts LogLevelType (not string), LoggingConfig types use LogLevelType, appender priority clarifies higher-first order, and LogLevel notes track between debug and trace. Ensures docs match src implementations.
+
+- **Affects:** `[doc]`
+- **Issue:** [#0](https://actual.link.to.issue.in.github)
+- **Pull Request:** [#0](https://actual.link.to.pull-request.in.github)
+
+### doc/api.md
+
+- `Doc ~` Clarified isFatal/isError/isWarn/isInfo/isDebug/isTrace/isTrack semantics (enabled when level >= flag level)
+- `Doc ~` Updated setLevel signature to use LogLevelType and listed accepted values
+- `Doc ~` Updated LoggingConfig.level and loggers types to LogLevelType
+- `Doc ~` Clarified AppenderConfig.priority describes higher values run first
+- `Doc ~` Updated LogLevel enum notes to place track between debug and trace and clarified emission rule and hierarchy

@@ -52,7 +52,7 @@ Define the behavior, configuration, and constraints of the built-in Console Appe
 - FR-CNS-004: write evaluates filters in the configured order and skips logging on the first false.
 
 ### 6.2 Console Output Semantics (name: "console")
-- FR-CNS-010: Map levels to console methods: fatal/error→console.error, warn→console.warn, info→console.info, debug→console.debug, trace→console.trace, track→console.log; fallback to console.log when a specific method is unavailable.
+- FR-CNS-010: Map levels to console methods: fatal/error→console.error, warn→console.warn, info→console.info, debug→console.debug, track→console.log, trace→console.trace; fallback to console.log when a specific method is unavailable.
 - FR-CNS-011: If a formatter is provided, spread the returned tokens into the chosen console method; otherwise pass the Log Event object as the single argument.
 - FR-CNS-012: flush() is a no-op.
 - FR-CNS-013: Requires global console availability; if console is unavailable, calls shall no-op.
