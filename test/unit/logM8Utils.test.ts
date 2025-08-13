@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { LogM8Utils } from '../../src/LogM8Utils.ts';
 
 describe('LogM8Utils', () => {

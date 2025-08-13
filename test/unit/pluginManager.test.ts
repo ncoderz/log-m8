@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import type { Plugin } from '../../src/Plugin.ts';
 import type { PluginFactory } from '../../src/PluginFactory.ts';
 import { PluginKind } from '../../src/PluginKind.ts';

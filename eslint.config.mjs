@@ -23,6 +23,7 @@ const config = [
       '**/build',
       'spec',
       '**/*.d.ts',
+      '.ai',
       '.github/instructions',
       '.github/prompts',
       '.github/chatmodes',

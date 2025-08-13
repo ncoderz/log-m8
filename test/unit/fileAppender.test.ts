@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it } from 'vitest';
 import { readFileSync, rmSync } from 'fs';
-import type { LogEvent } from '../../src/LogEvent.ts';
+import { afterEach, describe, expect, it } from 'vitest';
+
 import { FileAppenderFactory } from '../../src/appenders/FileAppender.ts';
+import type { LogEvent } from '../../src/LogEvent.ts';
 import { LogLevel } from '../../src/LogLevel.ts';
 
 function makeEvent(): LogEvent {
@@ -44,10 +45,17 @@ describe('FileAppender', () => {
     const a1 = f.create({ name: 'file', filename: tmp, append: false });
     a1.write(makeEvent());
     a1.dispose();
+
+    // Wait for the first stream to close completely
+    await new Promise((res) => setTimeout(res, 50));
+
     const a2 = f.create({ name: 'file', filename: tmp, append: true });
     a2.write(makeEvent());
     a2.dispose();
-    await new Promise((res) => setTimeout(res, 10));
+
+    // Wait for the second stream to close completely
+    await new Promise((res) => setTimeout(res, 50));
+
     const text = readFileSync(tmp, 'utf8');
     const occurrences = (text.match(/hello/g) || []).length;
     expect(occurrences).toBe(2);

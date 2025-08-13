@@ -8,17 +8,6 @@ import { LogM8 } from '../../src/LogM8.ts';
 import type { PluginFactory } from '../../src/PluginFactory.ts';
 import { PluginKind } from '../../src/PluginKind.ts';
 
-class AllowAllFilter implements Filter {
-  name = 'allow';
-  version = '1.0.0';
-  kind = PluginKind.filter;
-  init(): void {}
-  dispose(): void {}
-  shouldLog(): boolean {
-    return true;
-  }
-}
-
 class DenyAllFilter implements Filter {
   name = 'deny';
   version = '1.0.0';
@@ -27,20 +16,6 @@ class DenyAllFilter implements Filter {
   dispose(): void {}
   shouldLog(): boolean {
     return false;
-  }
-}
-
-class FilterFactory implements PluginFactory {
-  public name: string;
-  public version = '1.0.0';
-  public kind = PluginKind.filter;
-  private _filter: Filter;
-  constructor(name: string, filter: Filter) {
-    this.name = name;
-    this._filter = filter;
-  }
-  create(): Filter {
-    return this._filter;
   }
 }
 

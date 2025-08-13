@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { LogEvent } from '../../src/LogEvent.ts';
+
 import { DefaultFormatterFactory } from '../../src/formatters/DefaultFormatter.ts';
+import type { LogEvent } from '../../src/LogEvent.ts';
 import { LogLevel } from '../../src/LogLevel.ts';
 
 function makeEvent(overrides?: Partial<LogEvent>): LogEvent {
