@@ -1,26 +1,46 @@
 /**
- * Regex matching timestamp format tokens
- * Used by formatTimestamp to identify and replace tokens in a format string.
+ * Regex pattern for matching timestamp format tokens.
+ *
+ * Matches tokens in descending length order to prevent partial replacement
+ * (e.g., 'SSS' before 'SS' before 'S'). Used by formatTimestamp to identify
+ * and replace format placeholders.
  */
 const TIMESTAMP_TOKEN_REGEX = /(yyyy|SSS|hh|mm|ss|SS|zz|z|yy|MM|dd|A|a|h|S)/g;
 
 /**
- * Utility functions for formatting timestamps and accessing nested properties in log data.
+ * Utility functions for timestamp formatting and object property access.
+ *
+ * Provides environment detection, nested property traversal, and flexible
+ * timestamp formatting with support for custom tokens, ISO formats, and
+ * locale-specific output.
  */
 class LogM8Utils {
   /**
-   * Returns true if running in a browser environment.
-   * @returns True when window and document objects are available.
+   * Detects browser environment for feature compatibility.
+   *
+   * @returns True when both window and document global objects are available
    */
   public static isBrowser(): boolean {
     return typeof window !== 'undefined' && typeof window.document !== 'undefined';
   }
 
   /**
-   * Retrieves a nested property value from an object using a dot-separated path.
-   * @param obj - The object to traverse.
-   * @param path - Dot-separated string path (e.g., "user.profile.name").
-   * @returns The value at the path or undefined if not found.
+   * Traverses nested object properties using dot-separated path notation.
+   *
+   * Supports both object property access and array indexing with numeric keys.
+   * Safe navigation that returns undefined for invalid paths rather than throwing.
+   *
+   * @param obj - Source object to traverse
+   * @param path - Dot-separated property path (e.g., 'user.profile.name', 'items.0.id')
+   * @returns Property value at the specified path, or undefined if not found
+   *
+   * @example
+   * ```typescript
+   * const data = { user: { profile: { name: 'John' } }, items: [{ id: 1 }] };
+   * getPropertyByPath(data, 'user.profile.name'); // 'John'
+   * getPropertyByPath(data, 'items.0.id');        // 1
+   * getPropertyByPath(data, 'missing.path');      // undefined
+   * ```
    */
   public static getPropertyByPath(obj: unknown, path: string): unknown {
     let value = obj;
@@ -28,6 +48,7 @@ class LogM8Utils {
     for (const key of segments) {
       if (typeof value === 'object' && value !== null) {
         if (Array.isArray(value)) {
+          // Handle array indexing with numeric keys
           const idx = Number(key);
           if (Number.isInteger(idx) && idx >= 0) {
             value = value[idx];
@@ -43,38 +64,47 @@ class LogM8Utils {
   }
 
   /**
-   * Formats a Date into a string based on the given format or presets.
-   * Supports ISO (iso, toISOString), locale (locale, toLocaleString), or custom token formats.
-   * Supports tokens:
-   * - yyyy: 4-digit year (e.g., 2025)
-   * - yy: 2-digit year (e.g., 25)
-   * - MM: month (01-12) (e.g., 08)
-   * - dd: day of month (01-31) (e.g., 04)
-   * - hh: hour in 24-hour format (00-23) (e.g., 14)
-   * - h: hour in 12-hour format (1-12) (e.g., 2)
-   * - mm: minutes (00-59) (e.g., 07)
-   * - ss: seconds (00-59) (e.g., 09)
-   * - SSS: milliseconds (000-999) (e.g., 123)
-   * - SS: centiseconds (00-99) (e.g., 12)
-   * - S: deciseconds (0-9) (e.g., 1)
-   * - A: AM/PM (e.g., PM)
-   * - a: am/pm (e.g., pm)
-   * - z: timezone offset (±HH:MM) (e.g., -07:00)
-   * - zz: timezone offset without colon (±HHMM) (e.g., -0700)
+   * Formats Date objects using preset formats or custom token patterns.
    *
-   * anything that is not a token is a literal string and will be included as-is in the output.
+   * Supports common presets ('iso', 'locale') and flexible token-based formatting
+   * for complete control over timestamp appearance. Tokens are replaced with
+   * corresponding date/time components, while non-token text is preserved literally.
    *
-   * Example formats:
-   * - "iso" → "2023-10-01T12:34:56.789Z"
-   * - "locale" → "10/1/2023, 12:34:56 PM"
-   * - "yyyy-MM-dd hh:mm:ss" → "2023-10-01 14:34:56"
-   * - "MM/dd/yyyy" → "10/01/2023"
-   * - "yyyy-MM-dd hh:mm:ss z" → 2025-08-04 14:23:45 -07:00
-   * - "yyyy-MM-dd hh:mm:ss zz" → 2025-08-04 14:23:45 -0700
+   * Supported format tokens:
+   * - yyyy: 4-digit year (2025)
+   * - yy: 2-digit year (25)
+   * - MM: month with leading zero (01-12)
+   * - dd: day with leading zero (01-31)
+   * - hh: 24-hour format hour with leading zero (00-23)
+   * - h: 12-hour format hour (1-12)
+   * - mm: minutes with leading zero (00-59)
+   * - ss: seconds with leading zero (00-59)
+   * - SSS: milliseconds with leading zeros (000-999)
+   * - SS: centiseconds with leading zero (00-99)
+   * - S: deciseconds (0-9)
+   * - A: uppercase AM/PM
+   * - a: lowercase am/pm
+   * - z: timezone offset with colon (±HH:MM)
+   * - zz: timezone offset without colon (±HHMM)
    *
-   * @param date - The Date to format.
-   * @param fmt - Format string or preset key ('iso', 'locale').
-   * @returns The formatted timestamp string.
+   * @param date - Date instance to format
+   * @param fmt - Format preset ('iso'|'locale') or custom token pattern
+   * @returns Formatted timestamp string
+   *
+   * @example
+   * ```typescript
+   * const date = new Date('2025-08-04T14:23:45.123Z');
+   *
+   * // Presets
+   * formatTimestamp(date, 'iso');    // '2025-08-04T14:23:45.123Z'
+   * formatTimestamp(date, 'locale'); // '8/4/2025, 2:23:45 PM' (locale-dependent)
+   *
+   * // Custom patterns
+   * formatTimestamp(date, 'yyyy-MM-dd hh:mm:ss');     // '2025-08-04 14:23:45'
+   * formatTimestamp(date, 'MM/dd/yyyy h:mm A');       // '08/04/2025 2:23 PM'
+   * formatTimestamp(date, 'hh:mm:ss.SSS');            // '14:23:45.123'
+   * formatTimestamp(date, 'yyyy-MM-dd hh:mm:ss z');   // '2025-08-04 14:23:45 +00:00'
+   * ```
    */
   public static formatTimestamp(date: Date, fmt?: string): string {
     const fmtLower = fmt?.toLowerCase();
@@ -84,12 +114,13 @@ class LogM8Utils {
     if (fmtLower === 'locale' || fmtLower === 'tolocalestring') {
       return date.toLocaleString();
     }
-    // Flexible format string support
+
+    // Custom token-based formatting
     const pad = (n: number, z = 2) => String(n).padStart(z, '0');
     const hours24 = date.getHours();
     const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
 
-    // Match longest tokens first to avoid partial replacement
+    // Process tokens in descending length order to avoid partial matches
     return fmt.replace(TIMESTAMP_TOKEN_REGEX, (m) => {
       switch (m) {
         case 'yyyy':
@@ -120,16 +151,16 @@ class LogM8Utils {
           return hours24 < 12 ? 'am' : 'pm';
         case 'z':
         case 'zz': {
-          // Timezone offset in minutes: positive is ahead of UTC
+          // Calculate timezone offset: positive values are ahead of UTC
           const tzOffset = -date.getTimezoneOffset();
           const tzSign = tzOffset >= 0 ? '+' : '-';
           const tzHours = Math.floor(Math.abs(tzOffset) / 60);
           const tzMinutes = Math.abs(tzOffset) % 60;
           if (m === 'z') {
-            // Return as ±HH:MM
+            // Format as ±HH:MM with colon separator
             return `${tzSign}${pad(tzHours)}:${pad(tzMinutes)}`;
           }
-          // Return as ±HHMM
+          // Format as ±HHMM without separator
           return `${tzSign}${pad(tzHours)}${pad(tzMinutes)}`;
         }
 

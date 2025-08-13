@@ -84,7 +84,8 @@ Log-M8 is a lightweight, extensible logging library for TypeScript/JavaScript ap
 - FR-008: Logger setContext(ctx) shall replace the logger’s context with the provided object.
 - FR-009: Logger getLogger(childName) shall return a child logger named parent.child.
 - FR-010: Log enablement rule: a log is emitted only if levelIndex <= logger.levelIndex where index order is [off, fatal, error, warn, info, debug, track, trace].
-- FR-011: Logger read-only flags (isFatal, isError, isWarn, isInfo, isDebug, isTrack, isTrace) reflect equality to the current level value (note: these do not indicate enablement of lower/higher severities).
+- FR-011: Logger read-only flags (isFatal, isError, isWarn, isInfo, isDebug, isTrack, isTrace) indicate enablement for that severity level and above (i.e., whether calling that log method would emit an event).
+- FR-011a: Logger read-only flag isEnabled indicates whether logging is active (false only when level is 'off').
 
 ### 6.3 Appenders
 - FR-012: Appenders shall declare supportedLevels; events outside this set are skipped.
@@ -145,7 +146,7 @@ Log-M8 is a lightweight, extensible logging library for TypeScript/JavaScript ap
 
 ### 8.1 Constraints
 - C-001: Appender priority execution order is descending (higher numbers first). This is the implemented behavior.
-- C-002: Logger boolean flags (isFatal, etc.) indicate equality to the current level, not general enablement for that severity; this is by design in this version.
+- C-002: Logger boolean flags (isFatal, etc.) indicate enablement for that severity level and above; when true, calling that log method will emit an event.
 - C-003: If a requested plugin factory (by name/kind) is not found during init, initialization throws.
 - C-004: Console availability is required for console appender; file appender requires fs availability.
 
@@ -457,7 +458,7 @@ This library provides no user interface.
 ### Acceptance Criteria Matrix
 - Init/dispose cycles function without resource leaks (streams closed, plugins disposed)
 - getLogger returns stable instances and supports parent.child names
-- Level gating matches the specified order; equality-based flags behave as documented
+- Level gating matches the specified order; enablement-based flags behave as documented
 - Default console and file appenders work with default formatter text and JSON modes
 - Appender priority ordering is descending; enabling/disabling works at runtime
 - Buffering of pre-init logs caps at 100 and flushes correctly

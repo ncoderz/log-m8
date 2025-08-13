@@ -1,0 +1,403 @@
+# log-m8
+
+A lightweight, extensible logging library for TypeScript/JavaScript applications with hierarchical loggers, configurable appenders, and a flexible plugin system.
+
+## Table of Contents
+
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Hierarchical Loggers](#hierarchical-loggers)
+- [Log Levels](#log-levels)
+- [Built-in Appenders](#built-in-appenders)
+- [Default Formatter](#default-formatter)
+- [Runtime Control](#runtime-control)
+- [Custom Plugins](#custom-plugins)
+- [API Documentation](#api-documentation)
+- [Environment Compatibility](#environment-compatibility)
+
+## Features
+
+- **Hierarchical Loggers**: Organize loggers with dot-separated names (`app.database.queries`)
+- **Configurable Log Levels**: Support for `off`, `fatal`, `error`, `warn`, `info`, `debug`, `track`, `trace`
+- **Buffered Startup Logging**: Buffers up to 100 log events before initialization, then flushes them
+- **Plugin System**: Extensible appenders, formatters, and filters via factory pattern
+- **Built-in Appenders**: Console (Node.js/Browser) and File (Node.js) appenders included
+- **Flexible Formatting**: Default formatter with text/JSON modes, colors, and custom templates
+- **Runtime Control**: Enable/disable appenders and flush operations at runtime
+- **Zero Dependencies**: Lightweight with minimal external dependencies
+
+## Quick Start
+
+```typescript
+import { Logging } from 'log-m8';
+
+// Initialize with default console output
+Logging.init();
+
+// Get a logger and start logging
+const logger = Logging.getLogger('app');
+logger.info('Application started');
+logger.debug('Debug information', { userId: 123 });
+```
+
+## Installation
+
+```bash
+npm install log-m8
+```
+
+## Configuration
+
+### Basic Configuration
+
+```typescript
+import { Logging } from 'log-m8';
+
+Logging.init({
+  level: 'info',                    // Default level for all loggers
+  loggers: {                        // Per-logger level overrides
+    'app.database': 'debug',
+    'app.auth': 'warn'
+  },
+  appenders: [{                     // Output destinations
+    name: 'console',
+    formatter: 'default'
+  }]
+});
+```
+
+### Advanced Configuration
+
+```typescript
+Logging.init({
+  level: 'info',
+  loggers: {
+    'app.database': 'debug',
+    'app.performance': 'trace'
+  },
+  appenders: [
+    {
+      name: 'console',
+      enabled: true,
+      priority: 10,                 // Higher priority executes first
+      formatter: {
+        name: 'default',
+        format: '{timestamp} {LEVEL} [{logger}] {message}',
+        timestampFormat: 'hh:mm:ss.SSS',
+        color: true
+      },
+      filters: ['sensitive-data']   // Apply filters to events
+    },
+    {
+      name: 'file',
+      filename: 'app.log',
+      append: true,
+      formatter: {
+        name: 'default',
+        json: true,                 // JSON output for file
+        timestampFormat: 'iso'
+      }
+    }
+  ]
+});
+```
+
+## Hierarchical Loggers
+
+Create organized logger hierarchies with dot-separated names:
+
+```typescript
+const app = Logging.getLogger('app');
+const db = app.getLogger('database');        // Name: 'app.database'
+const queries = db.getLogger('queries');     // Name: 'app.database.queries'
+
+// Each logger can have independent configuration
+db.setLevel('debug');
+db.setContext({ service: 'postgres', pool: 'primary' });
+
+queries.debug('SELECT * FROM users WHERE id = ?', [123]);
+// Output: [timestamp] DEBUG [app.database.queries] SELECT * FROM users WHERE id = ? [123]
+```
+
+## Log Levels
+
+Log levels in ascending order of verbosity:
+
+- `off` - Disables all logging
+- `fatal` - Critical system failures
+- `error` - Operation failures
+- `warn` - Potentially problematic situations
+- `info` - General informational messages
+- `debug` - Detailed diagnostic information
+- `track` - Analytics/user behavior tracking
+- `trace` - Most detailed execution information
+
+```typescript
+const logger = Logging.getLogger('app');
+
+logger.setLevel('info');
+logger.fatal('System is shutting down');     // Emitted
+logger.error('Failed to connect to DB');     // Emitted
+logger.warn('Connection pool nearly full');  // Emitted
+logger.info('User logged in');               // Emitted
+logger.debug('Cache hit ratio: 94%');        // NOT emitted (debug > info)
+logger.track('user.click', { button: 'submit' }); // NOT emitted
+```
+
+## Built-in Appenders
+
+### Console Appender
+
+Outputs to the global console object with appropriate method mapping:
+
+```typescript
+{
+  name: 'console',
+  formatter: {
+    name: 'default',
+    color: true,                    // ANSI colors in Node.js, CSS in browser
+    format: '{timestamp} {LEVEL} [{logger}] {message}'
+  }
+}
+```
+
+### File Appender (Node.js only)
+
+Writes to files with configurable append/overwrite behavior:
+
+```typescript
+{
+  name: 'file',
+  filename: 'logs/app.log',
+  append: true,                     // Append to existing file
+  formatter: {
+    name: 'default',
+    json: true,                     // Structured JSON output
+    timestampFormat: 'iso'
+  }
+}
+```
+
+## Default Formatter
+
+The built-in formatter supports both text and JSON output modes with extensive customization:
+
+### Text Mode (Default)
+
+```typescript
+{
+  name: 'default',
+  format: '{timestamp} {LEVEL} [{logger}] {message}',
+  timestampFormat: 'hh:mm:ss.SSS',
+  color: true
+}
+
+// Output: 14:23:45.123 INFO  [app.auth] User authentication successful
+```
+
+### JSON Mode
+
+```typescript
+{
+  name: 'default',
+  json: true,
+  format: ['{timestamp}', '{level}', '{logger}', '{message}', '{data}']
+}
+
+// Output: {"timestamp":"2025-08-04T14:23:45.123Z","level":"info","logger":"app.auth","message":"User authenticated","data":{"userId":123}}
+```
+
+### Format Tokens
+
+- `{timestamp}` - Formatted timestamp
+- `{LEVEL}` - Uppercase level with optional colors
+- `{level}` - Lowercase level name
+- `{logger}` - Logger name
+- `{message}` - Primary log message
+- `{data}` - Additional data arguments
+- `{context.*}` - Context properties (e.g., `{context.userId}`)
+
+### Timestamp Formats
+
+```typescript
+// Presets
+timestampFormat: 'iso'           // 2025-08-04T14:23:45.123Z
+timestampFormat: 'locale'        // 8/4/2025, 2:23:45 PM
+
+// Custom patterns
+timestampFormat: 'yyyy-MM-dd hh:mm:ss'      // 2025-08-04 14:23:45
+timestampFormat: 'hh:mm:ss.SSS'             // 14:23:45.123
+timestampFormat: 'MM/dd/yyyy h:mm A'        // 08/04/2025 2:23 PM
+```
+
+Supported tokens: `yyyy`, `yy`, `MM`, `dd`, `hh`, `h`, `mm`, `ss`, `SSS`, `SS`, `S`, `A`, `a`, `z`, `zz`
+
+## Runtime Control
+
+### Appender Management
+
+```typescript
+// Disable/enable appenders dynamically
+Logging.disableAppender('console');
+Logging.enableAppender('file');
+
+// Force flush buffered output
+Logging.flushAppender('file');
+Logging.flushAppenders();         // Flush all appenders
+```
+
+### Logger Context
+
+```typescript
+const logger = Logging.getLogger('api');
+
+// Set context included with all log events
+logger.setContext({
+  requestId: 'req-123',
+  userId: 456,
+  sessionId: 'sess-789'
+});
+
+logger.info('Processing request');
+// Output includes context automatically
+```
+
+## Custom Plugins
+
+Extend the logging system with custom appenders, formatters, and filters:
+
+### Custom Appender
+
+```typescript
+import { Appender, AppenderConfig, LogEvent, PluginKind } from 'log-m8';
+
+class DatabaseAppender implements Appender {
+  name = 'database';
+  version = '1.0.0';
+  kind = PluginKind.appender;
+  supportedLevels = new Set(['error', 'fatal']);
+  enabled = true;
+
+  init(config: AppenderConfig) {
+    // Initialize database connection
+  }
+
+  write(event: LogEvent) {
+    // Insert log event into database
+  }
+
+  flush() {
+    // Ensure all logs are persisted
+  }
+
+  dispose() {
+    // Clean up resources
+  }
+}
+
+// Register before init()
+Logging.registerPluginFactory(new DatabaseAppenderFactory());
+```
+
+### Custom Filter
+
+```typescript
+import { Filter, LogEvent } from 'log-m8';
+
+class SensitiveDataFilter implements Filter {
+  name = 'sensitive-data';
+  version = '1.0.0';
+  kind = PluginKind.filter;
+
+  shouldLog(event: LogEvent): boolean {
+    // Return false to skip events containing sensitive data
+    const message = String(event.message);
+    return !message.includes('password') && !message.includes('token');
+  }
+}
+```
+
+## Pre-initialization Buffering
+
+Events logged before `init()` are automatically buffered and flushed:
+
+```typescript
+const logger = Logging.getLogger('app');
+
+// These events are buffered (up to 100)
+logger.info('Starting application');
+logger.debug('Loading configuration');
+
+// Initialize logging system
+Logging.init({ level: 'info' });
+
+// Buffered events are flushed, then new events process normally
+logger.info('Application ready'); // This triggers buffer flush + processes normally
+```
+
+## Error Handling
+
+The logging system is designed to be resilient:
+
+- Appender errors are caught and logged to console without stopping other appenders
+- Missing plugin factories throw errors during `init()` for early detection
+- Invalid configurations are handled gracefully with sensible defaults
+- File I/O errors in file appender don't crash the application
+
+## Performance Considerations
+
+- **Disabled Logs**: O(1) performance check for disabled log levels
+- **Synchronous Processing**: All logging operations are synchronous for predictable behavior
+- **Buffer Management**: Pre-init buffer is capped at 100 events with FIFO eviction
+- **Priority Ordering**: Appenders execute in descending priority order for deterministic output
+
+## Lifecycle Management
+
+```typescript
+// Graceful shutdown
+await new Promise(resolve => {
+  Logging.flushAppenders();
+  setTimeout(() => {
+    Logging.dispose();            // Clean up all resources
+    resolve();
+  }, 100);
+});
+
+// Can reinitialize after disposal
+Logging.init({ level: 'warn' });
+```
+
+## TypeScript Support
+
+Full TypeScript support with comprehensive type definitions:
+
+```typescript
+import { Log, LogLevel, LoggingConfig } from 'log-m8';
+
+const config: LoggingConfig = {
+  level: LogLevel.info,
+  appenders: [/* ... */]
+};
+
+const logger: Log = Logging.getLogger('typed');
+logger.info('Fully typed logging');
+```
+
+## API Documentation
+
+For comprehensive API documentation including detailed method signatures, configuration options, and advanced usage patterns, see:
+
+- **[Complete API Reference](doc/api.md)** - Detailed documentation of all classes, interfaces, and methods
+- **[Specifications](spec/)** - Technical specifications and behavioral requirements
+
+## Environment Compatibility
+
+- **Node.js**: Full functionality including file appender and ANSI colors
+- **Browser**: Console appender with CSS styling, no file operations
+- **Automatic Detection**: Environment-specific features enabled automatically
+
+## License
+
+MIT License - see LICENSE file for details.

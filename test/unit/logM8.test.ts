@@ -82,9 +82,12 @@ class SpyAppenderFactory implements PluginFactory {
   name = 'spy';
   version = '1.0.0';
   kind = PluginKind.appender;
+  instances: SpyAppender[] = [];
+
   create(config: AppenderConfig): Appender {
     const a = new SpyAppender();
     a.init(config);
+    this.instances.push(a);
     return a;
   }
 }
@@ -107,12 +110,51 @@ describe('LogM8 core', () => {
     expect(child.name).toBe('app.svc');
   });
 
-  it('level gating and equality flags behave as specified', () => {
+  it('level gating and enablement flags behave as specified', () => {
     const l = logm8.getLogger('x');
     expect(l.isInfo).toBe(true); // default level
+    expect(l.isEnabled).toBe(true); // should be enabled by default
+
     l.setLevel(LogLevel.error);
     expect(l.isError).toBe(true);
-    expect(l.isWarn).toBe(false);
+    expect(l.isFatal).toBe(true); // fatal is enabled when level is error
+    expect(l.isWarn).toBe(false); // warn is not enabled when level is error
+    expect(l.isEnabled).toBe(true); // should still be enabled
+  });
+
+  it('LogLevel.off disables all logging and flags', () => {
+    const spyFactory = new SpyAppenderFactory();
+    logm8.registerPluginFactory(spyFactory);
+    logm8.init({ appenders: [{ name: 'spy' }] });
+
+    const logger = logm8.getLogger('off-test');
+    logger.setLevel(LogLevel.off);
+
+    // Verify isEnabled is false when set to off
+    expect(logger.isEnabled).toBe(false);
+
+    // Verify all level flags are false when set to off
+    expect(logger.isFatal).toBe(false);
+    expect(logger.isError).toBe(false);
+    expect(logger.isWarn).toBe(false);
+    expect(logger.isInfo).toBe(false);
+    expect(logger.isDebug).toBe(false);
+    expect(logger.isTrack).toBe(false);
+    expect(logger.isTrace).toBe(false);
+
+    // Verify no events are emitted regardless of method called
+    const spy = spyFactory.instances[0];
+    spy.writes = []; // Clear any existing writes
+
+    logger.fatal('fatal message');
+    logger.error('error message');
+    logger.warn('warn message');
+    logger.info('info message');
+    logger.debug('debug message');
+    logger.track('track message');
+    logger.trace('trace message');
+
+    expect(spy.writes).toHaveLength(0); // No events should be written
   });
 
   it('buffers logs before init and flushes FIFO after init', () => {

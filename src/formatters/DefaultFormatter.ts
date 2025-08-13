@@ -13,13 +13,86 @@ const DEFAULT_FORMAT_JSON = ['{timestamp}', '{level}', '{logger}', '{message}', 
 const DEFAULT_TIMESTAMP_FORMAT = 'hh:mm:ss.SSS';
 const DEFAULT_TIMESTAMP_FORMAT_JSON = 'iso';
 
+/**
+ * Configuration interface for the default formatter.
+ *
+ * Extends base FormatterConfig with options for template customization,
+ * output format selection, and visual styling.
+ */
 export interface DefaultFormatterConfig extends FormatterConfig {
+  /**
+   * Custom format template(s) using token syntax.
+   * Single string or array of template strings for multi-line output.
+   * Defaults to readable text format or JSON field list based on json flag.
+   */
   format?: string | string[];
+
+  /**
+   * Timestamp format pattern or preset.
+   * Supports 'iso', 'locale', or custom token patterns (yyyy-MM-dd hh:mm:ss).
+   */
   timestampFormat?: string;
+
+  /**
+   * Enable colorized output using ANSI codes (Node.js) or CSS styles (browser).
+   * Applies colors to log level indicators for improved readability.
+   */
   color?: boolean;
+
+  /**
+   * Switch to JSON output mode.
+   * Produces structured objects instead of formatted text strings.
+   */
   json?: boolean;
 }
 
+/**
+ * Built-in formatter providing flexible text and JSON output with token-based templates.
+ *
+ * Supports customizable format templates using token substitution, automatic environment
+ * detection for color support, timestamp formatting, and dual-mode output (text/JSON).
+ * The default choice for most logging scenarios with sensible defaults and extensive
+ * customization options.
+ *
+ * Token syntax:
+ * - {timestamp}: Formatted timestamp using timestampFormat setting
+ * - {LEVEL}: Uppercase level name with optional colorization
+ * - {level}: Lowercase level name
+ * - {logger}: Logger name
+ * - {message}: Primary log message
+ * - {data}: Additional data arguments (expands to multiple items in text mode)
+ * - {context.*}: Nested context properties (e.g., {context.userId})
+ *
+ * Color support:
+ * - Node.js: ANSI escape codes for terminal colors
+ * - Browser: CSS style strings for console.log formatting
+ * - Automatic detection of environment capabilities
+ *
+ * @example
+ * ```typescript
+ * // Text mode with colors (default)
+ * formatter.init({
+ *   format: '{timestamp} {LEVEL} [{logger}] {message}',
+ *   timestampFormat: 'hh:mm:ss.SSS',
+ *   color: true
+ * });
+ *
+ * // JSON mode for structured logging
+ * formatter.init({
+ *   json: true,
+ *   format: ['{timestamp}', '{level}', '{logger}', '{message}', '{data}']
+ * });
+ *
+ * // Multi-line text output
+ * formatter.init({
+ *   format: [
+ *     '{timestamp} {LEVEL} [{logger}] {message}',
+ *     'Context: {context}',
+ *     'Data: {data}'
+ *   ]
+ * });
+ * ```
+ */
 class DefaultFormatter implements Formatter {
   public name = 'default';
   public version = '1.0.0';
@@ -31,6 +104,8 @@ class DefaultFormatter implements Formatter {
   private _levelMap!: Record<string, string | [string, string]>;
   private _colorEnabled: boolean = false;
   private _jsonEnabled: boolean = false;
+
+  // ANSI color codes for Node.js terminal output
   private _levelColorMap: Record<string, string> = {
     trace: '\x1b[37m', // White
     track: '\x1b[38;5;208m', // Orange
@@ -40,6 +115,8 @@ class DefaultFormatter implements Formatter {
     error: '\x1b[31m', // Red
     fatal: '\x1b[41m', // Red background
   };
+
+  // CSS color styles for browser console output
   private _levelCssColorMap: Record<string, string> = {
     trace: 'color: #bbb;', // Light gray
     track: 'color: orange;',
@@ -57,7 +134,7 @@ class DefaultFormatter implements Formatter {
     this._colorEnabled = !!this._config.color;
     this._jsonEnabled = !!this._config.json;
 
-    // Support format as a string: split into array using {} tokens
+    // Parse format templates into token/literal segments
     this._format = [];
     let formatConfig = (this._config.format ??
       (this._jsonEnabled ? DEFAULT_FORMAT_JSON : DEFAULT_FORMAT)) as string[];
@@ -65,7 +142,7 @@ class DefaultFormatter implements Formatter {
 
     if (formatConfig) {
       for (const f of formatConfig) {
-        // Split by curly braces, keeping tokens and literals (including whitespace and symbols)
+        // Split format string preserving both tokens ({...}) and literal text
         const regex = /(\{[^}]+\})|([^{}]+)/g;
         const parts = [];
         let match;
@@ -84,7 +161,7 @@ class DefaultFormatter implements Formatter {
       this._config.timestampFormat ??
       (this._jsonEnabled ? DEFAULT_TIMESTAMP_FORMAT_JSON : DEFAULT_TIMESTAMP_FORMAT);
 
-    // Build the level map for quick access
+    // Build level display map with padding and optional colorization
     const maxLevelLength = Math.max(
       ...Enum(LogLevel)
         .values()
@@ -98,12 +175,12 @@ class DefaultFormatter implements Formatter {
           let levelStr = level.toUpperCase().padEnd(maxLevelLength, ' ');
           if (this._colorEnabled) {
             if (isBrowser) {
-              // Browser: use CSS style string
+              // Browser: return [text, cssStyle] array for console.log('%c...', style)
               const css = this._levelCssColorMap[level] || '';
               acc[level] = [`%c${levelStr}`, css];
               return acc;
             } else {
-              // Node: use ANSI
+              // Node.js: wrap with ANSI escape codes
               const color = this._levelColorMap[level] || '';
               const reset = '\x1b[0m';
               levelStr = color + levelStr + reset;
@@ -134,7 +211,7 @@ class DefaultFormatter implements Formatter {
           return str + String(val);
         }, '');
       });
-      // locate data array entry and expand or remove it
+      // Locate data token and expand or remove it based on content
       const dataIndex = output.findIndex((v) => Array.isArray(v));
       if (dataIndex >= 0) {
         const data = output[dataIndex] as unknown[];
@@ -177,7 +254,7 @@ class DefaultFormatter implements Formatter {
   }
 
   private resolveToken(part: string, logEvent: LogEvent): unknown {
-    // Token syntax: {key}
+    // Process tokens using curly brace syntax: {property.path}
     if (part.startsWith('{') && part.endsWith('}')) {
       const key = part.slice(1, -1);
       if (key === 'LEVEL') {
@@ -186,10 +263,10 @@ class DefaultFormatter implements Formatter {
         const raw = LogM8Utils.getPropertyByPath(logEvent, key);
         return LogM8Utils.formatTimestamp(raw as Date, this._timestampFormat);
       }
-      // data and other properties
+      // Resolve data properties and context via dot-path notation
       return LogM8Utils.getPropertyByPath(logEvent, key);
     }
-    // Literal text
+    // Return literal text unchanged
     return part;
   }
 
@@ -197,7 +274,7 @@ class DefaultFormatter implements Formatter {
     part: string,
     logEvent: LogEvent,
   ): { key: string; value: unknown } | undefined {
-    // Token syntax: {key}
+    // Process tokens for JSON object construction
     if (part.startsWith('{') && part.endsWith('}')) {
       const key = part.slice(1, -1);
       if (key === 'LEVEL') {
@@ -206,11 +283,11 @@ class DefaultFormatter implements Formatter {
         const raw = LogM8Utils.getPropertyByPath(logEvent, key);
         return { key, value: LogM8Utils.formatTimestamp(raw as Date, this._timestampFormat) };
       }
-      // data and other properties
+      // Resolve properties via dot-path notation
       return { key, value: LogM8Utils.getPropertyByPath(logEvent, key) };
     }
-    // Literal text
-    return undefined; // JSON does not support literal text, so return undefined
+    // JSON mode ignores literal text
+    return undefined;
   }
 }
 

@@ -23,8 +23,40 @@ const DEFAULT_APPENDERS = [
 ];
 
 /**
- * Core logging manager that configures and dispatches log events to appenders.
- * Manages loggers, appenders, formatters, and filters.
+ * Central logging manager providing hierarchical loggers and configurable output.
+ *
+ * LogM8 manages the complete logging lifecycle including:
+ * - Logger creation and configuration with hierarchical naming
+ * - Plugin-based appender, formatter, and filter system
+ * - Pre-initialization event buffering (up to 100 events)
+ * - Runtime appender control (enable/disable/flush)
+ * - Built-in console and file appenders with customizable formatting
+ *
+ * The manager operates as a singleton export but can also be instantiated directly.
+ * Events logged before init() are buffered and flushed on first post-init log.
+ *
+ * @example
+ * ```typescript
+ * import { Logging } from 'log-m8';
+ *
+ * // Configure logging system
+ * Logging.init({
+ *   level: 'info',
+ *   loggers: { 'app.database': 'debug' },
+ *   appenders: [
+ *     { name: 'console', formatter: 'default' },
+ *     { name: 'file', filename: 'app.log' }
+ *   ]
+ * });
+ *
+ * // Use hierarchical loggers
+ * const logger = Logging.getLogger('app.service');
+ * logger.info('Service started');
+ *
+ * // Runtime control
+ * Logging.disableAppender('console');
+ * Logging.flushAppenders();
+ * ```
  */
 class LogM8 {
   private _initialized = false;
@@ -39,19 +71,38 @@ class LogM8 {
   private _logBuffer: LogEvent[] = [];
 
   constructor() {
-    // Register built-in plugin factories
-
-    // Appenders
+    // Register built-in plugin factories for console/file appenders and default formatter
     this._pluginManager.registerPluginFactory(new ConsoleAppenderFactory());
     this._pluginManager.registerPluginFactory(new FileAppenderFactory());
-
-    // Formatters
     this._pluginManager.registerPluginFactory(new DefaultFormatterFactory());
   }
 
   /**
-   * Initializes logging with the provided configuration, sets default levels, loggers, and appenders.
-   * @param config - Optional logging configuration.
+   * Initializes the logging system with configuration and flushes any buffered events.
+   *
+   * Sets up default and per-logger levels, creates configured appenders with their
+   * formatters and filters, and processes any events buffered before initialization.
+   * Appenders are sorted by priority (descending) for deterministic execution order.
+   *
+   * @param config - Logging configuration object
+   * @param config.level - Default log level for all loggers ('info' if not specified)
+   * @param config.loggers - Per-logger level overrides by name
+   * @param config.appenders - Appender configurations (defaults to console if not specified)
+   *
+   * @throws {Error} When referenced plugin factories are not registered
+   *
+   * @example
+   * ```typescript
+   * Logging.init({
+   *   level: 'warn',
+   *   loggers: { 'app.database': 'debug' },
+   *   appenders: [{
+   *     name: 'console',
+   *     formatter: 'default',
+   *     filters: ['sensitive-data']
+   *   }]
+   * });
+   * ```
    */
   public init(config?: LoggingConfig): void {
     config = Object.assign({}, config);
@@ -109,7 +160,23 @@ class LogM8 {
   }
 
   /**
-   * Disposes the logging system, flushing appenders and deregistering plugin factories.
+   * Shuts down the logging system and releases all resources.
+   *
+   * Flushes all appenders, disposes plugin instances, clears logger registry,
+   * discards buffered events, and deregisters plugin factories. The system
+   * can be reinitialized after disposal.
+   *
+   * @example
+   * ```typescript
+   * // Graceful shutdown
+   * await new Promise(resolve => {
+   *   Logging.flushAppenders();
+   *   setTimeout(() => {
+   *     Logging.dispose();
+   *     resolve();
+   *   }, 100);
+   * });
+   * ```
    */
   public dispose(): void {
     // Reset to initial state (flushes appenders, disposes all plugins)
@@ -125,9 +192,24 @@ class LogM8 {
   }
 
   /**
-   * Returns or creates a logger instance by name (or name segments).
-   * @param name - Logger name or array of name segments.
-   * @returns The logger instance for the given name.
+   * Retrieves or creates a logger instance with hierarchical naming.
+   *
+   * Logger instances are cached and reused for the same name. Names can be
+   * provided as strings with dot-separation or as array segments that get
+   * joined. Each logger maintains independent level and context settings.
+   *
+   * @param name - Logger name as string ('app.service') or segments (['app', 'service'])
+   * @returns Logger instance for the specified name
+   *
+   * @example
+   * ```typescript
+   * const logger1 = Logging.getLogger('app.database');
+   * const logger2 = Logging.getLogger(['app', 'database']);
+   * // logger1 === logger2 (same instance)
+   *
+   * logger1.setLevel('debug');
+   * logger1.setContext({ service: 'postgres' });
+   * ```
    */
   public getLogger(name: string | string[]): Log {
     let nameStr: string = name as string;
@@ -165,8 +247,9 @@ class LogM8 {
   }
 
   /**
-   * Enables the specified appender by its name.
-   * @param name - The name of the appender to enable.
+   * Enables an appender to resume processing log events.
+   *
+   * @param name - Name of the appender to enable
    */
   public enableAppender(name: string): void {
     const appender = this._getAppender(name);
@@ -175,8 +258,9 @@ class LogM8 {
   }
 
   /**
-   * Disables the specified appender by its name.
-   * @param name - The name of the appender to disable.
+   * Disables an appender to stop processing log events.
+   *
+   * @param name - Name of the appender to disable
    */
   public disableAppender(name: string): void {
     const appender = this._getAppender(name);
@@ -185,8 +269,12 @@ class LogM8 {
   }
 
   /**
-   * Flushes the specified appender, catching and logging any errors.
-   * @param name - The name of the appender to flush.
+   * Forces an appender to flush any buffered output.
+   *
+   * Catches and logs flush errors to console without interrupting operation.
+   * Useful for ensuring data persistence before shutdown or at intervals.
+   *
+   * @param name - Name of the appender to flush
    */
   public flushAppender(name: string): void {
     const appender = this._getAppender(name);
@@ -202,6 +290,9 @@ class LogM8 {
 
   /**
    * Flushes all configured appenders.
+   *
+   * Iterates through all appenders calling flush on each, with individual
+   * error handling per appender.
    */
   public flushAppenders(): void {
     for (const appender of this._appenders) {
@@ -210,8 +301,23 @@ class LogM8 {
   }
 
   /**
-   * Registers a plugin factory for custom plugins.
-   * @param pluginFactory - The plugin factory to register.
+   * Registers a custom plugin factory for appenders, formatters, or filters.
+   *
+   * Allows extending the logging system with custom implementations.
+   * Must be called before init() to be available during configuration.
+   *
+   * @param pluginFactory - Factory instance implementing the PluginFactory interface
+   *
+   * @example
+   * ```typescript
+   * class SlackAppenderFactory implements PluginFactory {
+   *   name = 'slack';
+   *   kind = PluginKind.appender;
+   *   create(config) { return new SlackAppender(config); }
+   * }
+   *
+   * Logging.registerPluginFactory(new SlackAppenderFactory());
+   * ```
    */
   public registerPluginFactory(pluginFactory: PluginFactory): void {
     this._pluginManager.registerPluginFactory(pluginFactory);
@@ -223,6 +329,7 @@ class LogM8 {
     message: string | unknown,
     ...data: unknown[]
   ): void {
+    // Early return if level not enabled - O(1) performance for disabled logs
     const levelNumber = this._logLevelValues.indexOf(level);
     if (levelNumber > logger._levelNumber) return;
 
@@ -237,7 +344,7 @@ class LogM8 {
     };
 
     if (this._initialized) {
-      // Process buffered log events first
+      // Process buffered log events first (FIFO order)
       if (this._logBuffer.length > 0) {
         for (const bufferedEvent of this._logBuffer) {
           this._processLogEvent(bufferedEvent);
@@ -261,13 +368,15 @@ class LogM8 {
     logger._levelNumber = this._logLevelValues.indexOf(level);
 
     logger.isEnabled = level !== LogLevel.off;
-    logger.isFatal = level === LogLevel.fatal;
-    logger.isError = level === LogLevel.error;
-    logger.isWarn = level === LogLevel.warn;
-    logger.isInfo = level === LogLevel.info;
-    logger.isDebug = level === LogLevel.debug;
-    logger.isTrack = level === LogLevel.track;
-    logger.isTrace = level === LogLevel.trace;
+    // Boolean flags indicate enablement for that severity level and above
+    const levelNumber = logger._levelNumber;
+    logger.isFatal = this._logLevelValues.indexOf(LogLevel.fatal) <= levelNumber;
+    logger.isError = this._logLevelValues.indexOf(LogLevel.error) <= levelNumber;
+    logger.isWarn = this._logLevelValues.indexOf(LogLevel.warn) <= levelNumber;
+    logger.isInfo = this._logLevelValues.indexOf(LogLevel.info) <= levelNumber;
+    logger.isDebug = this._logLevelValues.indexOf(LogLevel.debug) <= levelNumber;
+    logger.isTrack = this._logLevelValues.indexOf(LogLevel.track) <= levelNumber;
+    logger.isTrace = this._logLevelValues.indexOf(LogLevel.trace) <= levelNumber;
   }
 
   private _setContext(logger: LogImpl, context: LogContext): void {
@@ -293,6 +402,7 @@ class LogM8 {
   }
 
   private _sortAppenders(): void {
+    // Sort by descending priority - higher numbers execute first
     this._appenders.sort((a, b) => {
       const aPriority = a?.priority ?? 0;
       const bPriority = b?.priority ?? 0;

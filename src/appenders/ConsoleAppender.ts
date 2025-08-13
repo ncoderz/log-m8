@@ -21,10 +21,37 @@ const SUPPORTED_LEVELS = new Set<LogLevelType>([
   LogLevel.trace,
 ]);
 
+/**
+ * Configuration interface for console appender.
+ * Currently extends base AppenderConfig without additional options.
+ */
 export interface ConsoleAppenderConfig extends AppenderConfig {
   //
 }
 
+/**
+ * Built-in appender that outputs log events to the global console object.
+ *
+ * Maps log levels to appropriate console methods (error, warn, info, debug, etc.)
+ * with fallback to console.log when specific methods are unavailable.
+ * Automatically detects console availability and gracefully handles environments
+ * where console is not available.
+ *
+ * Features:
+ * - Zero-configuration operation
+ * - Automatic console method mapping by log level
+ * - Graceful degradation when console methods are missing
+ * - No-op flush operation (console output is immediate)
+ * - Environment detection for console availability
+ *
+ * @example
+ * ```typescript
+ * // Automatic registration - no manual setup needed
+ * Logging.init({
+ *   appenders: [{ name: 'console', formatter: 'default' }]
+ * });
+ * ```
+ */
 class ConsoleAppender implements Appender {
   public name = NAME;
   public version = VERSION;
@@ -39,6 +66,7 @@ class ConsoleAppender implements Appender {
   private _filters: Filter[] = [];
   private _available = true;
 
+  // Console method mapping with fallbacks for missing methods
   private off = () => {};
   private fatal = console.error ? console.error.bind(console) : console.log.bind(console);
   private error = console.error ? console.error.bind(console) : console.log.bind(console);
@@ -65,17 +93,17 @@ class ConsoleAppender implements Appender {
   public write(event: LogEvent): void {
     if (!this._available) return;
 
-    // Filter
+    // Apply filters in sequence - any filter denial skips the event
     for (const filter of this._filters) {
       if (!filter.shouldLog(event)) {
         return; // Skip if any filter denies logging
       }
     }
 
-    // Format
+    // Format the event or use raw event if no formatter
     const data = this._formatter ? this._formatter.format(event) : [event];
 
-    // Log
+    // Output using level-appropriate console method
     this[event.level](...data);
   }
 
@@ -84,6 +112,12 @@ class ConsoleAppender implements Appender {
   }
 }
 
+/**
+ * Factory for creating ConsoleAppender instances.
+ *
+ * Automatically registered with the LogM8 system and creates console appenders
+ * when referenced by name in logging configuration.
+ */
 class ConsoleAppenderFactory implements PluginFactory<ConsoleAppenderConfig, ConsoleAppender> {
   public name = NAME;
   public version = VERSION;
