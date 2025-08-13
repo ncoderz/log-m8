@@ -12,7 +12,7 @@ export interface AppenderConfig extends PluginConfig {
   enabled?: boolean;
 
   /**
-   * Priority determining execution order; lower values run first.
+   * Priority determining execution order; higher values run first (descending order).
    */
   priority?: number;
 

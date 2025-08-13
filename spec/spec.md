@@ -1,7 +1,7 @@
 ---
 Title: Log-M8 Logging Library Specification
 Version: 1.0.0
-Date Created: 2025-08-10
+Date Created: 2025-- FR-007: Logger setLevel(level) shall set the logger's level and computed internal index, accepting LogLevelType enum values.8-10
 Last Updated: 2025-08-10
 ---
 
@@ -84,7 +84,7 @@ Log-M8 is a lightweight, extensible logging library for TypeScript/JavaScript ap
 - FR-008: Logger setContext(ctx) shall replace the logger’s context with the provided object.
 - FR-009: Logger getLogger(childName) shall return a child logger named parent.child.
 - FR-010: Log enablement rule: a log is emitted only if levelIndex <= logger.levelIndex where index order is [off, fatal, error, warn, info, debug, track, trace].
-- FR-011: Logger read-only flags (isFatal, isError, isWarn, isInfo, isDebug, isTrack, isTrace) indicate enablement for that severity level and above (i.e., whether calling that log method would emit an event).
+- FR-011: Logger read-only flags (isFatal, isError, isWarn, isInfo, isDebug, isTrack, isTrace) indicate enablement for that severity level and higher severity levels (i.e., whether calling that log method would emit an event).
 - FR-011a: Logger read-only flag isEnabled indicates whether logging is active (false only when level is 'off').
 
 ### 6.3 Appenders
@@ -146,13 +146,14 @@ Log-M8 is a lightweight, extensible logging library for TypeScript/JavaScript ap
 
 ### 8.1 Constraints
 - C-001: Appender priority execution order is descending (higher numbers first). This is the implemented behavior.
-- C-002: Logger boolean flags (isFatal, etc.) indicate enablement for that severity level and above; when true, calling that log method will emit an event.
+- C-002: Logger boolean flags (isFatal, etc.) indicate enablement for that severity level and higher severity levels; when true, calling that log method will emit an event.
 - C-003: If a requested plugin factory (by name/kind) is not found during init, initialization throws.
 - C-004: Console availability is required for console appender; file appender requires fs availability.
 
 ### 8.2 Assumptions
 - A-001: Applications will call init() early in startup; pre-init buffer protects against early logs but should be kept small.
 - A-002: Applications may register additional plugin factories before calling init().
+- A-003: Logger boolean flags (isFatal, etc.) indicate enablement for that severity level and higher severity levels; when true, calling that log method will emit an event.
 
 ## 9. API (Smithy IDL)
 
@@ -427,7 +428,7 @@ structure DuplicateFactory { message: String }
 // - Appenders execute in descending priority order. Missing/undefined priority treated as 0.
 // - Console appender requires global console; file appender requires Node.js fs and a valid path.
 // - Formatter tokens include {timestamp}, {LEVEL}, {level}, {logger}, {message}, {data}, and nested fields via dot-paths.
-// - Logger boolean flags (isFatal/isError/...) equal true only when current level equals that value.
+// - Logger boolean flags (isFatal/isError/...) indicate enablement for that severity level and higher severity levels.
 ```
 
 ## 10. Error Handling

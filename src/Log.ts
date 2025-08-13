@@ -167,7 +167,7 @@ export interface Log {
    *
    * @param level - New logging level name (e.g., 'info', 'debug', 'off')
    */
-  setLevel(level: string): void;
+  setLevel(level: LogLevelType): void;
 
   /**
    * Replaces the logger's contextual data.

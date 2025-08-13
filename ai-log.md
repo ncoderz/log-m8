@@ -1,5 +1,24 @@
 # 2025-08-13
 
+## Corrected specification mismatches with implementation
+
+Fixed several discrepancies between the specification and actual implementation behavior, particularly around logger boolean flags and appender priority ordering. Also updated spec after Logger.setLevel() interface was corrected.
+
+- **Affects:** `[spec]` `[code]`
+
+### spec/spec.md
+
+- `Spec ~` Clarified FR-011 to state boolean flags indicate enablement for that severity level and "higher severity levels" instead of "above"
+- `Spec ~` Updated constraint C-002 to match the corrected wording about boolean flag behavior
+- `Spec ~` Updated Smithy API comment about boolean flags to match the corrected behavior
+- `Spec +` Added assumption A-003 to document the boolean flag behavior explicitly
+- `Spec ~` Updated FR-007 to clarify that setLevel() accepts LogLevelType enum values after interface was corrected
+- `Spec -` Removed constraint C-005 about the setLevel() implementation bug since it was fixed
+
+### src/AppenderConfig.ts
+
+- `Comment ~` Corrected priority documentation to state "higher values run first (descending order)" instead of "lower values run first"
+
 ## Fixed timing issue in FileAppender append test
 
 Resolved a race condition in the FileAppender test where streams weren't properly closed before the next operation. The test was failing because it tried to append to a file before the previous write stream was fully closed.
