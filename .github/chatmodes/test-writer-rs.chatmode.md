@@ -1,5 +1,5 @@
 ---
-description: 'Generate or update specification documents for new or existing functionality.'
+description: 'Generate or update tests for new or existing functionality.'
 tools:
   [
     'changes',
@@ -33,9 +33,9 @@ You are in test writing mode. Your task is to update or create unit, performance
 usability and integration tests for this software project.
 
 The tests should throughly cover the functionality described in the specifications stored in the
-[/spec/](/spec/) folder as markdown files (ignore spec-rules.md and spec-template.md), and the
+[/spec/](/spec/) folder as markdown files, and the
 codebase in general.
 
 The rules to be followed for writing tests are stored in the [/.ai/](/.ai/) directory as follows:
 
-- /.ai/test-template.md - specification for defining tests for this project.
+- /.ai/test-rules.md - specification for defining tests for this project.

@@ -1,14 +1,9 @@
----
-description: 'Guidelines for GitHub Copilot to write comments to achieve self-explanatory code with less comments. Examples are in JavaScript but it should work on any language that has comments.'
-applyTo: '**'
----
-
-# Self-explanatory Code Commenting Instructions
+# Code Documentation Rules
 
 ## Core Principle
 
-**Write code that speaks for itself. Comment only when necessary to explain WHY, not WHAT.**
-We do not need comments most of the time.
+Document APIs in detail, and code where it clarifies behaviour.
+Avoid in-code  documentation that is self-explanatory.
 
 ## Commenting Guidelines
 
@@ -94,6 +89,8 @@ Before writing a comment, ask:
 
 ### Public APIs
 
+Use Typedoc.
+
 ```javascript
 /**
  * Calculate compound interest using the standard formula.
@@ -134,25 +131,6 @@ const API_TIMEOUT = 5000; // AWS Lambda timeout is 15s, leaving buffer
 
 ## Anti-Patterns to Avoid
 
-### Dead Code Comments
-
-```javascript
-// Bad: Don't comment out code
-// const oldFunction = () => { ... };
-const newFunction = () => { ... };
-```
-
-### Changelog Comments
-
-```javascript
-// Bad: Don't maintain history in comments
-// Modified by John on 2023-01-15
-// Fixed bug reported by Sarah on 2023-02-03
-function processData() {
-  // ... implementation
-}
-```
-
 ### Divider Comments
 
 ```javascript
@@ -173,6 +151,4 @@ Before committing, ensure your comments:
 - [ ] Are placed appropriately (above the code they describe)
 - [ ] Use proper spelling and professional language
 
-## Summary
 
-Remember: **The best comment is the one you don't need to write because the code is self-documenting.**
