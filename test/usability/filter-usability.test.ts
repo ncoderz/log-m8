@@ -89,8 +89,10 @@ describe('Filter Usability Tests', () => {
           LogLevel.track,
           LogLevel.trace,
         ];
-        const eventIndex = levels.indexOf(logEvent.level as (typeof levels)[number]);
-        const minIndex = levels.indexOf(this.minLevel as (typeof levels)[number]);
+        const validEventLevel = Enum(LogLevel).fromValue(logEvent.level) ?? LogLevel.trace;
+        const validMinLevel = Enum(LogLevel).fromValue(this.minLevel) ?? LogLevel.info;
+        const eventIndex = levels.indexOf(validEventLevel);
+        const minIndex = levels.indexOf(validMinLevel);
         return eventIndex <= minIndex;
       }
     }

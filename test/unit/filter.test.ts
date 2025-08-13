@@ -1,3 +1,4 @@
+import { Enum } from '@ncoderz/superenum';
 import { describe, expect, it } from 'vitest';
 
 import type { Filter } from '../../src/Filter.ts';
@@ -83,8 +84,16 @@ class LevelFilter implements Filter {
       return false;
     }
 
-    const eventLevelIndex = levelOrder.indexOf(logEvent.level as (typeof levelOrder)[number]);
-    const minLevelIndex = levelOrder.indexOf(this.minLevel as (typeof levelOrder)[number]);
+    const validEventLevel = Enum(LogLevel).fromValue(logEvent.level) ?? LogLevel.trace;
+    const validMinLevel = Enum(LogLevel).fromValue(this.minLevel) ?? LogLevel.info;
+
+    // Filter out 'off' since it's handled separately above
+    if (validEventLevel === LogLevel.off || validMinLevel === LogLevel.off) {
+      return false;
+    }
+
+    const eventLevelIndex = levelOrder.indexOf(validEventLevel as (typeof levelOrder)[number]);
+    const minLevelIndex = levelOrder.indexOf(validMinLevel as (typeof levelOrder)[number]);
 
     return eventLevelIndex >= minLevelIndex;
   }

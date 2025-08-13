@@ -1,6 +1,25 @@
 ## 2025-08-14
 
-## Correct 'track' vs 'trace' ordering across docs and interfaces
+### Fix unsafe enum casting with proper Enum.fromValue validation
+
+Replaces unsafe enum casting patterns using `as [typeof array](number)` with safe validation using `Enum(LogLevel).fromValue()`. This prevents runtime errors from invalid enum values and ensures type safety throughout the codebase.
+
+- **Affects:** `[test]`
+- **Issue:** [#0](https://actual.link.to.issue.in.github)
+- **Pull Request:** [#0](https://actual.link.to.pull-request.in.github)
+
+#### test/usability/filter-usability.test.ts
+
+- `Test ~` Replaced unsafe array casting with `Enum(LogLevel).fromValue()` for level validation in LevelFilter.
+- `Test ~` Added proper validation with default fallbacks for both event level and minimum level.
+
+#### test/unit/filter.test.ts
+
+- `Code +` Added import for `Enum` from `@ncoderz/superenum`.
+- `Test ~` Replaced unsafe array casting with `Enum(LogLevel).fromValue()` for level validation in LevelFilter.
+- `Test ~` Added additional check to filter out 'off' level values before array operations.
+
+### Correct 'track' vs 'trace' ordering across docs and interfaces
 
 Fixes instances where 'trace' was listed before 'track'. Ensures consistent level order: off < fatal < error < warn < info < debug < track < trace in specs and docs, and orders logger method listings accordingly.
 

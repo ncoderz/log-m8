@@ -24,9 +24,7 @@ const config = [
       'spec',
       '**/*.d.ts',
       '.ai',
-      '.github/instructions',
-      '.github/prompts',
-      '.github/chatmodes',
+      '.github',
     ],
   },
 
