@@ -42,6 +42,7 @@ The specifications are stored in the [/spec/](/spec/) directory and are structur
 - /spec/spec-[a-z0-9-]+.md - child specifications, where each specification is referenced by its
   parent specification, up to the root.
 
-Specification files must follow the rules defined in [/.ai/spec-rules.md](/.ai/spec-rules.md).
+The following rules and templates are to be read and followed:
 
-Specification files must follow the template defined in [/.ai/spec-template.md](/.ai/spec-template.md).
+- /.ai/config/spec-rules.md - rules for writing specifications.
+- /.ai/config/spec-template.md - template for specifications.

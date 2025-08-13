@@ -1,5 +1,12 @@
 # Specification Rules
 
+The specifications are stored in the `/spec` directory and are structured in a tree as follows:
+
+- /spec/spec.md - root specification for the project.
+- /spec/spec-[a-z0-9-]+.md - child specifications, where each specification is referenced by its
+  parent specification, up to the root.
+
+
 The specification describes the software system as a black-box, it ignores implementation details.
 It is complete in that it provides all the information required to implement the software system
 from scratch. It therefore details any parts that are exposed to users or other systems in their

@@ -35,7 +35,6 @@ project.
 The code documentation should throughly cover the functionality described in the specifications
 stored in the [/spec/](/spec/) folder as markdown files, and the codebase in general.
 
-The rules to be followed for writing code documentation are stored in the [/.ai/](/.ai/) directory
-as follows:
+The following rules and templates are to be read and followed:
 
-- /.ai/code-doc-rules.md - specification for writing code documentation for this project.
+- /.ai/config/code-doc-rules.md - specification for writing code documentation for this project.

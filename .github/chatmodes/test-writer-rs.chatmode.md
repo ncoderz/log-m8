@@ -36,6 +36,6 @@ The tests should throughly cover the functionality described in the specificatio
 [/spec/](/spec/) folder as markdown files, and the
 codebase in general.
 
-The rules to be followed for writing tests are stored in the [/.ai/](/.ai/) directory as follows:
+The following rules and templates are to be read and followed:
 
-- /.ai/test-rules.md - specification for defining tests for this project.
+- /.ai/config/test-rules.md - specification for defining tests for this project.

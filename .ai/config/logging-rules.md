@@ -1,14 +1,10 @@
----
-applyTo: '**'
----
-
-# AI Logging
+# AI Logging Instructions
 
 As an AI, you will log your actions and decisions in a structured manner to ensure traceability and
 accountability. This logging will help in understanding the AI's behavior, debugging issues, and
 improving future interactions.
 
-Maintain a human-readable, append-only Markdown log in a file named /ai-log.md.
+Maintain a human-readable, append-only Markdown log in a file named `/.ai/log/ai-log.md`.
 
 ## FORMAT (exact structure)
 

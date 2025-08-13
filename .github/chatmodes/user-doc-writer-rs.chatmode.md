@@ -35,6 +35,6 @@ project.
 The documentation should throughly cover the functionality described in the specifications stored in the
 [/spec/](/spec/) folder as markdown files, and the codebase in general.
 
-The rules to be followed for writing documents are stored in the [/.ai/](/.ai/) directory as follows:
+The following rules and templates are to be read and followed:
 
-- /.ai/user-doc-rules.md - specification for defining user documents for this project.
+- /.ai/config/user-doc-rules.md - specification for defining user documents for this project.
