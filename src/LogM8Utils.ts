@@ -27,24 +27,30 @@ class LogM8Utils {
   /**
    * Traverses nested object properties using dot-separated path notation.
    *
-   * Supports both object property access and array indexing with numeric keys.
-   * Safe navigation that returns undefined for invalid paths rather than throwing.
+   *  Supports both object property access and array indexing with numeric keys.
+   *  Also supports bracket notation for array indices which is normalized internally
+   *  (e.g., `data[0].items[2]` becomes `data.0.items.2`).
+   *  Safe navigation that returns undefined for invalid paths rather than throwing.
    *
-   * @param obj - Source object to traverse
-   * @param path - Dot-separated property path (e.g., 'user.profile.name', 'items.0.id')
-   * @returns Property value at the specified path, or undefined if not found
+   *  @param obj - Source object to traverse
+   *  @param path - Dot-separated property path (e.g., 'user.profile.name', 'items.0.id')
+   *               or a path with bracket indices (e.g., 'items[0].id')
+   *  @returns Property value at the specified path, or undefined if not found
    *
-   * @example
-   * ```typescript
-   * const data = { user: { profile: { name: 'John' } }, items: [{ id: 1 }] };
-   * getPropertyByPath(data, 'user.profile.name'); // 'John'
-   * getPropertyByPath(data, 'items.0.id');        // 1
-   * getPropertyByPath(data, 'missing.path');      // undefined
-   * ```
+   *  @example
+   *  ```typescript
+   *  const data = { user: { profile: { name: 'John' } }, items: [{ id: 1 }, { id: 2 }] };
+   *  getPropertyByPath(data, 'user.profile.name'); // 'John'
+   *  getPropertyByPath(data, 'items.0.id');        // 1
+   *  getPropertyByPath(data, 'items[1].id');       // 2 (bracket notation)
+   *  getPropertyByPath(data, 'missing.path');      // undefined
+   *  ```
    */
   public static getPropertyByPath(obj: unknown, path: string): unknown {
     let value = obj;
-    const segments = path.split('.');
+    // Support bracket index notation by converting to dot-separated tokens, e.g., data[0].items[2] -> data.0.items.2
+    const normalized = path.replace(/\[(\d+)\]/g, '.$1');
+    const segments = normalized.split('.');
     for (const key of segments) {
       if (typeof value === 'object' && value !== null) {
         if (Array.isArray(value)) {

@@ -12,6 +12,7 @@ A lightweight, extensible logging library for TypeScript/JavaScript applications
 - [Log Levels](#log-levels)
 - [Built-in Appenders](#built-in-appenders)
 - [Default Formatter](#default-formatter)
+- [Default Filter](#default-filter)
 - [Runtime Control](#runtime-control)
 - [Custom Plugins](#custom-plugins)
 - [API Documentation](#api-documentation)
@@ -56,15 +57,19 @@ npm install log-m8
 import { Logging } from 'log-m8';
 
 Logging.init({
-  level: 'info',                    // Default level for all loggers
-  loggers: {                        // Per-logger level overrides
+  level: 'info', // Default level for all loggers
+  loggers: {
+    // Per-logger level overrides
     'app.database': 'debug',
-    'app.auth': 'warn'
+    'app.auth': 'warn',
   },
-  appenders: [{                     // Output destinations
-    name: 'console',
-    formatter: 'default'
-  }]
+  appenders: [
+    {
+      // Output destinations
+      name: 'console',
+      formatter: 'default',
+    },
+  ],
 });
 ```
 
@@ -75,20 +80,20 @@ Logging.init({
   level: 'info',
   loggers: {
     'app.database': 'debug',
-    'app.performance': 'trace'
+    'app.performance': 'trace',
   },
   appenders: [
     {
       name: 'console',
       enabled: true,
-      priority: 10,                 // Higher priority executes first
+      priority: 10, // Higher priority executes first
       formatter: {
         name: 'default',
         format: '{timestamp} {LEVEL} [{logger}] {message}',
         timestampFormat: 'hh:mm:ss.SSS',
-        color: true
+        color: true,
       },
-      filters: ['sensitive-data']   // Apply filters to events
+      filters: ['sensitive-data'], // Apply filters to events
     },
     {
       name: 'file',
@@ -96,11 +101,11 @@ Logging.init({
       append: true,
       formatter: {
         name: 'default',
-        json: true,                 // JSON output for file
-        timestampFormat: 'iso'
-      }
-    }
-  ]
+        json: true, // JSON output for file
+        timestampFormat: 'iso',
+      },
+    },
+  ],
 });
 ```
 
@@ -110,8 +115,8 @@ Create organized logger hierarchies with dot-separated names:
 
 ```typescript
 const app = Logging.getLogger('app');
-const db = app.getLogger('database');        // Name: 'app.database'
-const queries = db.getLogger('queries');     // Name: 'app.database.queries'
+const db = app.getLogger('database'); // Name: 'app.database'
+const queries = db.getLogger('queries'); // Name: 'app.database.queries'
 
 // Each logger can have independent configuration
 db.setLevel('debug');
@@ -138,11 +143,11 @@ Log levels in ascending order of verbosity:
 const logger = Logging.getLogger('app');
 
 logger.setLevel('info');
-logger.fatal('System is shutting down');     // Emitted
-logger.error('Failed to connect to DB');     // Emitted
-logger.warn('Connection pool nearly full');  // Emitted
-logger.info('User logged in');               // Emitted
-logger.debug('Cache hit ratio: 94%');        // NOT emitted (debug > info)
+logger.fatal('System is shutting down'); // Emitted
+logger.error('Failed to connect to DB'); // Emitted
+logger.warn('Connection pool nearly full'); // Emitted
+logger.info('User logged in'); // Emitted
+logger.debug('Cache hit ratio: 94%'); // NOT emitted (debug > info)
 logger.track('user.click', { button: 'submit' }); // NOT emitted
 ```
 
@@ -223,16 +228,86 @@ The built-in formatter supports both text and JSON output modes with extensive c
 
 ```typescript
 // Presets
-timestampFormat: 'iso'           // 2025-08-04T14:23:45.123Z
-timestampFormat: 'locale'        // 8/4/2025, 2:23:45 PM
+timestampFormat: 'iso'; // 2025-08-04T14:23:45.123Z
+timestampFormat: 'locale'; // 8/4/2025, 2:23:45 PM
 
 // Custom patterns
-timestampFormat: 'yyyy-MM-dd hh:mm:ss'      // 2025-08-04 14:23:45
-timestampFormat: 'hh:mm:ss.SSS'             // 14:23:45.123
-timestampFormat: 'MM/dd/yyyy h:mm A'        // 08/04/2025 2:23 PM
+timestampFormat: 'yyyy-MM-dd hh:mm:ss'; // 2025-08-04 14:23:45
+timestampFormat: 'hh:mm:ss.SSS'; // 14:23:45.123
+timestampFormat: 'MM/dd/yyyy h:mm A'; // 08/04/2025 2:23 PM
 ```
 
 Supported tokens: `yyyy`, `yy`, `MM`, `dd`, `hh`, `h`, `mm`, `ss`, `SSS`, `SS`, `S`, `A`, `a`, `z`, `zz`
+
+## Default Filter
+
+Built-in filter providing simple allow/deny rules with path-based matching.
+
+### Configuration
+
+```typescript
+// Allow ALL rules to match (AND), then deny if ANY deny rule matches (OR)
+{
+  name: 'console',
+  formatter: 'default',
+  filters: [
+    {
+      name: 'default-filter',
+      allow: {
+        logger: 'allow.this.logger',
+        'data[0].custom[3].path': 4
+      },
+      deny: {
+        logger: 'block.this.logger',
+        'context.userId': '1234'
+      }
+    }
+  ]
+}
+```
+
+### Semantics
+
+- allow: If provided and non-empty, the event must satisfy ALL allow rules to pass.
+- deny: If provided, the event is blocked if ANY deny rule matches.
+- Precedence: deny overrides allow.
+
+### Path Notation
+
+- Dot paths: `context.userId`, `logger`, `level`
+- Bracket indices: `data[0].custom[3].path`
+- Path resolution is safe; missing paths yield `undefined` and won’t throw.
+
+### Try it
+
+```typescript
+import { Logging } from 'log-m8';
+
+Logging.init({
+  level: 'debug',
+  appenders: [
+    {
+      name: 'console',
+      formatter: 'default',
+      filters: [
+        {
+          name: 'default-filter',
+          allow: { logger: 'demo', 'data[0].kind': 'ping' },
+          deny: { 'context.userId': 'blocked' },
+        },
+      ],
+    },
+  ],
+});
+
+const log = Logging.getLogger('demo');
+log.info('will be filtered out'); // no data => fails allow
+log.info('allowed with data', { kind: 'ping' }); // passes allow
+
+const withCtx = log.getLogger('ctx');
+withCtx.setContext({ userId: 'blocked' });
+withCtx.info('denied due to context', { kind: 'ping' }); // denied by rule
+```
 
 ## Runtime Control
 
@@ -245,7 +320,7 @@ Logging.enableAppender('file');
 
 // Force flush buffered output
 Logging.flushAppender('file');
-Logging.flushAppenders();         // Flush all appenders
+Logging.flushAppenders(); // Flush all appenders
 ```
 
 ### Logger Context
@@ -257,7 +332,7 @@ const logger = Logging.getLogger('api');
 logger.setContext({
   requestId: 'req-123',
   userId: 456,
-  sessionId: 'sess-789'
+  sessionId: 'sess-789',
 });
 
 logger.info('Processing request');
@@ -357,10 +432,10 @@ The logging system is designed to be resilient:
 
 ```typescript
 // Graceful shutdown
-await new Promise(resolve => {
+await new Promise((resolve) => {
   Logging.flushAppenders();
   setTimeout(() => {
-    Logging.dispose();            // Clean up all resources
+    Logging.dispose(); // Clean up all resources
     resolve();
   }, 100);
 });
@@ -378,7 +453,9 @@ import { Log, LogLevel, LoggingConfig } from 'log-m8';
 
 const config: LoggingConfig = {
   level: LogLevel.info,
-  appenders: [/* ... */]
+  appenders: [
+    /* ... */
+  ],
 };
 
 const logger: Log = Logging.getLogger('typed');
