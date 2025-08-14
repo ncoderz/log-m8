@@ -7,6 +7,7 @@ export { type ConsoleAppenderConfig } from './appenders/ConsoleAppender.ts';
 export { type FileAppenderConfig } from './appenders/FileAppender.ts';
 export { type Filter } from './Filter.ts';
 export { type FilterConfig } from './FilterConfig.ts';
+export { type DefaultFilterConfig } from './filters/DefaultFilter.ts';
 export { type Formatter } from './Formatter.ts';
 export { type FormatterConfig } from './FormatterConfig.ts';
 export { type DefaultFormatterConfig } from './formatters/DefaultFormatter.ts';

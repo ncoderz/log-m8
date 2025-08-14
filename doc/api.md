@@ -20,6 +20,7 @@ This document provides comprehensive API documentation for the log-m8 logging li
   - [ConsoleAppender](#consoleappender)
   - [FileAppender](#fileappender)
   - [DefaultFormatter](#defaultformatter)
+  - [DefaultFilter](#defaultfilter)
 - [Utilities](#utilities)
   - [LogM8Utils](#logm8utils)
   - [LogLevel Enum](#loglevel-enum)
@@ -430,6 +431,42 @@ interface DefaultFormatterConfig extends FormatterConfig {
 
 ---
 
+### DefaultFilter
+
+Built-in filter supporting declarative allow/deny matching using path-based rules.
+
+#### Configuration
+
+```typescript
+interface DefaultFilterConfig extends FilterConfig {
+  allow?: Record<string, unknown>; // AND semantics across all allow rules when provided
+  deny?: Record<string, unknown>;  // OR semantics; any match denies (overrides allow)
+}
+```
+
+#### Examples
+
+```typescript
+// Only allow specific logger and data value
+{ name: 'default-filter', allow: { logger: 'app.service', 'data[0].type': 'audit' } }
+
+// Deny specific user
+{ name: 'default-filter', deny: { 'context.userId': '1234' } }
+
+// Combined allow + deny
+{
+  name: 'default-filter',
+  allow: { logger: 'allow.this.logger', 'data[0].custom[3].path': 4 },
+  deny:  { logger: 'block.this.logger', 'context.userId': '1234' }
+}
+```
+
+#### Notes
+
+- Paths support dot and bracket notation (e.g., `context.userId`, `data[0].x`)
+- Deep equality is used for arrays/objects; Dates compare by time; NaN equals NaN
+- Missing paths return `undefined` (no throw)
+
 ## Utilities
 
 ### LogM8Utils
@@ -456,9 +493,10 @@ Traverses nested object properties using dot-separated path notation.
 
 **Example:**
 ```typescript
-const data = { user: { profile: { name: 'John' } }, items: [{ id: 1 }] };
+const data = { user: { profile: { name: 'John' } }, items: [{ id: 1 }, { id: 2 }] };
 LogM8Utils.getPropertyByPath(data, 'user.profile.name'); // 'John'
 LogM8Utils.getPropertyByPath(data, 'items.0.id');        // 1
+LogM8Utils.getPropertyByPath(data, 'items[1].id');       // 2
 ```
 
 ##### `formatTimestamp(date: Date, fmt?: string): string`

@@ -1,5 +1,6 @@
 ## 2025-08-14
 
+
 ### Record superenum library memory and set up memory indexes
 
 Create memory structure and add an entry for @ncoderz/superenum to improve future retrieval of dependency usage and implications.
@@ -17,6 +18,57 @@ Create memory structure and add an entry for @ncoderz/superenum to improve futur
 #### .ai/memory/memory-library-superenum.md
 
 - `Doc +` Added memory with version, usage locations, APIs, and notes for @ncoderz/superenum.
+
+
+### Document DefaultFilter and bracket-notation support in utils
+
+Add specs and code docs for the built-in DefaultFilter (allow/deny semantics) and clarify bracket-notation support in `getPropertyByPath` to aid discoverability and alignment with tests.
+
+- **Affects:** `[comment]` `[spec]`
+- **Issue:** N/A
+- **Pull Request:** N/A
+
+#### src/LogM8Utils.ts
+
+- `Comment ~` Expanded JSDoc for `getPropertyByPath` to include bracket index normalization and examples.
+
+#### spec/spec-filters.md
+
+- `Spec ~` Bumped version to 1.2.0; added DefaultFilter functional requirements and API notes; acceptance criteria updated.
+
+### Add DefaultFilter user documentation and API reference
+
+Documented usage of built-in DefaultFilter in README and API docs, including configuration, semantics, path notation, and examples.
+
+- **Affects:** `[doc]`
+- **Issue:** N/A
+- **Pull Request:** N/A
+
+#### README.md
+
+- `Doc ~` Added "Default Filter" section with config and examples.
+
+#### doc/api.md
+
+- `Doc ~` Added "DefaultFilter" under Built-in Plugins and updated `getPropertyByPath` examples with bracket notation.
+
+### Improve DefaultFilter JSDoc and add README Try it snippet
+
+Enhance discoverability by documenting DefaultFilter.init() and shouldLog() behavior and adding a quick "Try it" example to README.
+
+- **Affects:** `[comment]` `[doc]`
+- **Issue:** N/A
+- **Pull Request:** N/A
+
+#### src/filters/DefaultFilter.ts
+
+- `Comment ~` Added JSDoc for `init()` and `shouldLog()` describing rule evaluation and safety behavior.
+
+#### README.md
+
+- `Doc +` Inserted "Try it" code snippet under Default Filter section.
+## 2025-08-14
+
 
 ### Fix unsafe enum casting with proper Enum.fromValue validation
 
