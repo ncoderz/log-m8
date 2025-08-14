@@ -54,6 +54,8 @@ class DefaultFilter implements Filter {
   public version = '1.0.0';
   public kind = PluginKind.filter;
 
+  public enabled = true;
+
   private _allow?: Record<string, unknown>;
   private _deny?: Record<string, unknown>;
   /**
@@ -65,6 +67,7 @@ class DefaultFilter implements Filter {
     const cfg = (config ?? {}) as DefaultFilterConfig;
     this._allow = cfg.allow ?? undefined;
     this._deny = cfg.deny ?? undefined;
+    this.enabled = cfg.enabled !== false; // Default to true if not specified
   }
 
   public dispose(): void {
@@ -79,7 +82,7 @@ class DefaultFilter implements Filter {
    * @param logEvent - Event to evaluate
    * @returns true when the event should be logged; false to drop
    */
-  public shouldLog(logEvent: LogEvent): boolean {
+  public filter(logEvent: LogEvent): boolean {
     try {
       // Allow rules: if provided, ALL must match
       if (this._allow && Object.keys(this._allow).length > 0) {

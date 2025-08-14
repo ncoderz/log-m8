@@ -50,7 +50,7 @@ class FileAppender implements Appender {
     const flags = this._config.append ? 'a' : 'w';
     this._stream = createWriteStream(this._config.filename, { flags });
 
-    this.enabled = this._config?.enabled === false ? false : true;
+    this.enabled = this._config?.enabled !== false; // Default to true if not specified
     this.priority = this._config?.priority;
   }
 

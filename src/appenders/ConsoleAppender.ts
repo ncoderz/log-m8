@@ -82,7 +82,7 @@ class ConsoleAppender implements Appender {
     this._filters = filters || [];
     this._available = typeof console !== 'undefined' && !!console.log;
 
-    this.enabled = this._config?.enabled === false ? false : true;
+    this.enabled = this._config?.enabled !== false; // Default to true if not specified
     this.priority = this._config?.priority;
   }
 
