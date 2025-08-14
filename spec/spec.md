@@ -1,7 +1,7 @@
 ---
 Title: Log-M8 Logging Library Specification
 Version: 1.0.0
-Date Created: 2025-- FR-007: Logger setLevel(level) shall set the logger's level and computed internal index, accepting LogLevelType enum values.8-10
+Date Created: 2025-08-10
 Last Updated: 2025-08-10
 ---
 
@@ -18,6 +18,7 @@ Log-M8 is a lightweight, extensible logging library for TypeScript/JavaScript ap
 - Buffer log events emitted before initialization (up to 100), then flush them upon init
 - Dispatch log events to configured appenders in priority order
 - Allow enabling/disabling and flushing of appenders at runtime
+- Allow enabling/disabling of filters at runtime (globally and per-appender)
 - Allow custom plugins (appenders, formatters, filters) via a simple factory interface
 - Include built-in plugins: console appender, file appender (Node.js), default formatter
 - Provide timestamp formatting utilities and path-based property access for formatters
@@ -56,6 +57,7 @@ Log-M8 is a lightweight, extensible logging library for TypeScript/JavaScript ap
 4. Plugin system with built-in console/file appenders and default formatter
 5. Formatter with template tokens, JSON mode, and timestamp formatting
 6. Runtime control of appenders (enable/disable/flush; flush all)
+6a. Runtime control of filters (enable/disable globally or scoped to a specific appender)
 7. Deterministic appender execution order via priority
 8. Utilities for timestamp formatting and object path resolution
 
@@ -115,6 +117,11 @@ Log-M8 is a lightweight, extensible logging library for TypeScript/JavaScript ap
 ### 6.7 Filtering
 - FR-029: Filters shall be called in order for each event; if any filter returns false, the event is skipped.
 - FR-030: Missing filters or formatter are optional; events shall be passed as a single LogEvent object when no formatter is provided.
+- FR-031: Filters shall expose a runtime-enabled flag; when disabled, the filter is skipped during evaluation without removal.
+- FR-032: The manager shall support enableFilter(name) and disableFilter(name) to toggle global filters; when provided with an appender name, the toggle applies only to that appender’s local filter instance.
+- FR-033: Appenders shall expose enableFilter(name) and disableFilter(name) to toggle their configured filters.
+- FR-034: LoggingConfig may specify global filters evaluated prior to appender processing; appender-level filters apply after global filters.
+- FR-035: FilterConfig shall include an optional enabled flag controlling initial enabled state (default: true).
 
 ## 7. Non-functional Requirements
 
@@ -149,6 +156,7 @@ Log-M8 is a lightweight, extensible logging library for TypeScript/JavaScript ap
 - C-002: Logger boolean flags (isFatal, etc.) indicate enablement for that severity level and higher severity levels; when true, calling that log method will emit an event.
 - C-003: If a requested plugin factory (by name/kind) is not found during init, initialization throws.
 - C-004: Console availability is required for console appender; file appender requires fs availability.
+- C-005: Disabled filters must not affect evaluation order and are treated as no-ops.
 
 ### 8.2 Assumptions
 - A-001: Applications will call init() early in startup; pre-init buffer protects against early logs but should be kept small.
@@ -237,7 +245,10 @@ structure PluginConfig {
 structure FormatterConfig extends PluginConfig {}
 
 // Filter config
-structure FilterConfig extends PluginConfig {}
+structure FilterConfig extends PluginConfig {
+    // Initial enabled state; defaults to true when omitted
+    enabled: Boolean
+}
 
 // Appender config
 structure AppenderConfig extends PluginConfig {
@@ -246,13 +257,13 @@ structure AppenderConfig extends PluginConfig {
     // Formatter can be referred to by name or inline config
     formatterName: String
     formatterConfig: FormatterConfig
-    // Filters by name or inline configs
-    filterNames: FilterNameList
-    filterConfigs: FilterConfigList
+    // Filters by name or inline configs (evaluated after global filters)
+    filters: FilterRefList
 }
 
-list FilterNameList { member: String }
-list FilterConfigList { member: FilterConfig }
+// Filter reference by name or inline configuration
+union FilterRef { name: String, config: FilterConfig }
+list FilterRefList { member: FilterRef }
 
 structure LoggingConfig {
     level: LogLevel
@@ -260,6 +271,8 @@ structure LoggingConfig {
     loggerLevels: LoggerLevelMap
     // Appender configs
     appenders: AppenderConfigList
+    // Global filters evaluated before appenders
+    filters: FilterRefList
 }
 
 map LoggerLevelMap {
@@ -309,6 +322,8 @@ service LogM8Library {
         DisableAppender,
         FlushAppender,
         FlushAppenders,
+    EnableFilter,
+    DisableFilter,
         RegisterPluginFactory,
 
         // Logger operations (modeled resource-like)
@@ -373,6 +388,16 @@ operation FlushAppenders {}
 
 structure AppenderByName { @required name: String }
 
+// Filter controls
+operation EnableFilter { input: FilterToggle }
+operation DisableFilter { input: FilterToggle }
+
+// Toggle a filter globally or for a specific appender when provided
+structure FilterToggle {
+    @required name: String
+    appenderName: String
+}
+
 // Plugin registration
 operation RegisterPluginFactory {
     input: RegisterPluginFactoryInput
@@ -429,6 +454,7 @@ structure DuplicateFactory { message: String }
 // - Console appender requires global console; file appender requires Node.js fs and a valid path.
 // - Formatter tokens include {timestamp}, {LEVEL}, {level}, {logger}, {message}, {data}, and nested fields via dot-paths.
 // - Logger boolean flags (isFatal/isError/...) indicate enablement for that severity level and higher severity levels.
+// - Global filters (from LoggingConfig.filters) evaluate first; appender-level filters evaluate next. Disabled filters are skipped.
 ```
 
 ## 10. Error Handling

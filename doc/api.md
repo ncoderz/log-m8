@@ -12,6 +12,7 @@ This document provides comprehensive API documentation for the log-m8 logging li
   - [AppenderConfig](#appenderconfig)
   - [FormatterConfig](#formatterconfig)
   - [FilterConfig](#filterconfig)
+  - [Global Filters](#global-filters)
 - [Plugin System](#plugin-system)
   - [Plugin Interface](#plugin-interface)
   - [PluginFactory Interface](#pluginfactory-interface)
@@ -114,6 +115,22 @@ Forces an appender to flush any buffered output.
 ##### `flushAppenders(): void`
 
 Flushes all configured appenders.
+
+##### `enableFilter(name: string, appenderName?: string): void`
+
+Enables a filter globally or for a specific appender when `appenderName` is provided.
+
+**Parameters:**
+- `name` - Filter name to enable
+- `appenderName` - Optional appender name to scope the toggle
+
+##### `disableFilter(name: string, appenderName?: string): void`
+
+Disables a filter globally or for a specific appender when `appenderName` is provided.
+
+**Parameters:**
+- `name` - Filter name to disable
+- `appenderName` - Optional appender name to scope the toggle
 
 ##### `registerPluginFactory(pluginFactory: PluginFactory): void`
 
@@ -219,9 +236,10 @@ Main configuration object for initializing the logging system.
 
 ```typescript
 interface LoggingConfig {
-  level?: LogLevelType;              // Default log level for all loggers
-  loggers?: Record<string, LogLevelType | undefined>;  // Per-logger level overrides by name
-  appenders?: AppenderConfig[];      // Appender configurations
+  level?: LogLevelType;                               // Default log level for all loggers
+  loggers?: Record<string, LogLevelType | undefined>; // Per-logger level overrides by name
+  appenders?: AppenderConfig[];                       // Appender configurations
+  filters?: (string | FilterConfig)[];                // Global filters (evaluated before appenders)
 }
 ```
 
@@ -269,6 +287,7 @@ Base configuration for filter plugins.
 
 ```typescript
 interface FilterConfig extends PluginConfig {
+  enabled?: boolean; // Initial enabled state (default: true)
   // Additional filter-specific options in options property
 }
 ```
@@ -466,6 +485,25 @@ interface DefaultFilterConfig extends FilterConfig {
 - Paths support dot and bracket notation (e.g., `context.userId`, `data[0].x`)
 - Deep equality is used for arrays/objects; Dates compare by time; NaN equals NaN
 - Missing paths return `undefined` (no throw)
+ - Filters have an `enabled` flag; disabled filters are skipped during evaluation
+
+### Global Filters
+
+Global filters are evaluated before any appender-level filters and can be toggled at runtime.
+
+```typescript
+Logging.init({
+  filters: [
+    { name: 'default-filter', deny: { 'context.userId': 'blocked' } },
+    'sensitive-data'
+  ],
+  appenders: [ { name: 'console', formatter: 'default' } ]
+});
+
+// Toggle at runtime
+Logging.disableFilter('sensitive-data');           // globally
+Logging.enableFilter('default-filter', 'console'); // only for console appender
+```
 
 ## Utilities
 

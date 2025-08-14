@@ -30,7 +30,7 @@ const DEFAULT_APPENDERS = [
  * - Logger creation and configuration with hierarchical naming
  * - Plugin-based appender, formatter, and filter system
  * - Pre-initialization event buffering (up to 100 events)
- * - Runtime appender control (enable/disable/flush)
+ * - Runtime appender and filter control (enable/disable/flush)
  * - Built-in console and file appenders with customizable formatting
  *
  * The manager operates as a singleton export but can also be instantiated directly.
@@ -56,6 +56,7 @@ const DEFAULT_APPENDERS = [
  *
  * // Runtime control
  * Logging.disableAppender('console');
+ * Logging.disableFilter('sensitive-data');
  * Logging.flushAppenders();
  * ```
  */
@@ -315,6 +316,25 @@ class LogM8 {
     }
   }
 
+  /**
+   * Enables a filter to resume processing log events.
+   *
+   * When an appender name is provided, enables the filter only for that specific
+   * appender. When no appender is specified, enables the filter globally.
+   * Silently ignores requests for non-existent filters or appenders.
+   *
+   * @param name - Name of the filter to enable
+   * @param appenderName - Optional appender name to enable filter for specific appender only
+   *
+   * @example
+   * ```typescript
+   * // Enable filter globally
+   * Logging.enableFilter('sensitive-data');
+   *
+   * // Enable filter only for console appender
+   * Logging.enableFilter('debug-filter', 'console');
+   * ```
+   */
   public enableFilter(name: string, appenderName?: string): void {
     if (appenderName) {
       this._getAppender(appenderName)?.enableFilter(name);
@@ -325,6 +345,25 @@ class LogM8 {
     filter.enabled = true;
   }
 
+  /**
+   * Disables a filter to stop processing log events.
+   *
+   * When an appender name is provided, disables the filter only for that specific
+   * appender. When no appender is specified, disables the filter globally.
+   * Silently ignores requests for non-existent filters or appenders.
+   *
+   * @param name - Name of the filter to disable
+   * @param appenderName - Optional appender name to disable filter for specific appender only
+   *
+   * @example
+   * ```typescript
+   * // Disable filter globally
+   * Logging.disableFilter('sensitive-data');
+   *
+   * // Disable filter only for file appender
+   * Logging.disableFilter('debug-filter', 'file');
+   * ```
+   */
   public disableFilter(name: string, appenderName?: string): void {
     if (appenderName) {
       this._getAppender(appenderName)?.disableFilter(name);

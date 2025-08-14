@@ -50,6 +50,7 @@ Define the behavior, configuration, and constraints of the built-in Console Appe
 - FR-CNS-002: supportedLevels include: fatal, error, warn, info, debug, track, trace.
 - FR-CNS-003: init applies enabled/priority from config and stores provided formatter and filters.
 - FR-CNS-004: write evaluates filters in the configured order and skips logging on the first false.
+- FR-CNS-005: The appender exposes enableFilter(name) and disableFilter(name) to toggle local filter instances at runtime; disabled filters are skipped.
 
 ### 6.2 Console Output Semantics (name: "console")
 - FR-CNS-010: Map levels to console methods: fatal/error→console.error, warn→console.warn, info→console.info, debug→console.debug, track→console.log, trace→console.trace; fallback to console.log when a specific method is unavailable.

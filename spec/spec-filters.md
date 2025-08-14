@@ -1,7 +1,7 @@
 Title: Log-M8 Filters Specification
 Version: 1.2.0
 Date Created: 2025-08-10
-Last Updated: 2025-08-14
+Last Updated: 2025-08-15
 ---
 
 ## 1. Purpose
@@ -35,6 +35,7 @@ Filters are plugins created and used by appenders during the logging process. Ea
 2. Plugin-based architecture for custom implementations
 3. Integration with appender logging workflow
 4. Built-in DefaultFilter supporting allow/deny maps with path-based matching
+5. Runtime enable/disable at global level and per-appender
 
 ## 5. User Stories
 
@@ -54,6 +55,9 @@ Filters are plugins created and used by appenders during the logging process. Ea
 - FR-FLTR-008: DefaultFilter `deny` map blocks when ANY rule matches (logical OR); deny takes precedence over allow
 - FR-FLTR-009: DefaultFilter shall resolve values using dot-paths and bracket indices (e.g., `context.userId`, `data[0].custom[3].path`)
 - FR-FLTR-010: DefaultFilter comparisons use deep equality for arrays/objects and strict equality for primitives; Dates compare by time value; NaN equals NaN
+- FR-FLTR-011: Filters expose an `enabled` flag (default true) that can be set via configuration and toggled at runtime; disabled filters are skipped without affecting order.
+- FR-FLTR-012: The manager shall provide enableFilter(name, appenderName?) and disableFilter(name, appenderName?) to toggle global filters or appender-local filters when an appender name is provided.
+- FR-FLTR-013: Appenders shall implement enableFilter(name) and disableFilter(name) for toggling their filter instances.
 
 ## 7. Non-functional Requirements
 
@@ -90,6 +94,7 @@ use com.ncoderz.logm8#PluginConfig
 // Configuration for filter plugins
 structure FilterConfig extends PluginConfig {
     // Configuration is open-ended via PluginConfig.options
+    enabled: Boolean
 }
 
 // Configuration for the built-in DefaultFilter
@@ -129,6 +134,7 @@ structure ShouldLogOutput {
 // - Filter instances are created per appender during initialization
 // - DefaultFilter factory name: "default-filter"; supports `allow` (AND) and `deny` (OR) maps
 // - Path resolution supports dot and bracket notation (e.g., data[0].x)
+// - Disabled filters are skipped; global filters (from LoggingConfig) run before appender-level filters
 ```
 
 ## 10. Error Handling

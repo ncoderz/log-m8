@@ -85,6 +85,11 @@ Logging.init({
   appenders: [
     {
       name: 'console',
+  // Global filters evaluated before appenders
+  filters: [
+    { name: 'default-filter', deny: { 'context.userId': 'blocked' } },
+    'sensitive-data'
+  ]
       enabled: true,
       priority: 10, // Higher priority executes first
       formatter: {
@@ -93,7 +98,7 @@ Logging.init({
         timestampFormat: 'hh:mm:ss.SSS',
         color: true,
       },
-      filters: ['sensitive-data'], // Apply filters to events
+  filters: ['sensitive-data'], // Appender-level filters
     },
     {
       name: 'file',

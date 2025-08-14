@@ -1,3 +1,32 @@
+## 2025-08-15
+
+### Add runtime filter enable/disable (global and per-appender) to specs and docs
+
+Document runtime toggling of filters, initial enabled flag in FilterConfig, and global filters in LoggingConfig. Update API and README to show usage and align with implemented code.
+
+- **Affects:** `[spec]` `[doc]`
+
+#### spec/spec.md
+
+- `Spec ~` Clarified buffering frontmatter, added FRs for filter enable/disable (FR-031..FR-035), global filters, and constraints for disabled filters.
+- `Spec ~` Updated Smithy: FilterConfig.enabled, LoggingConfig.filters, AppenderConfig.filters union, and EnableFilter/DisableFilter operations.
+
+#### spec/spec-filters.md
+
+- `Spec ~` Added runtime enable/disable requirements and FilterConfig.enabled. Updated last updated date and implementation notes.
+
+#### spec/spec-appenders-console.md
+
+- `Spec ~` Added requirement for per-appender filter toggling APIs.
+
+#### doc/api.md
+
+- `Doc ~` Added enableFilter/disableFilter methods, global filters in LoggingConfig, FilterConfig.enabled, and notes on disabled filters. Inserted Global Filters section with usage.
+
+#### README.md
+
+- `Doc ~` Noted runtime control of filters and added config/usage snippets for global filters and runtime toggles.
+
 ## 2025-08-14
 
 

@@ -16,7 +16,7 @@ const baseEvent = (): LogEvent => ({
 describe('DefaultFilter', () => {
   it('allows all when no rules provided', () => {
     const f = new DefaultFilterFactory().create({ name: 'default-filter' } as DefaultFilterConfig);
-    expect(f.shouldLog(baseEvent())).toBe(true);
+    expect(f.filter(baseEvent())).toBe(true);
   });
 
   it('applies allow with AND semantics', () => {
@@ -25,9 +25,9 @@ describe('DefaultFilter', () => {
       allow: { logger: 'app.service', level: LogLevel.info },
     });
 
-    expect(f.shouldLog(baseEvent())).toBe(true);
+    expect(f.filter(baseEvent())).toBe(true);
     expect(
-      f.shouldLog({
+      f.filter({
         ...baseEvent(),
         logger: 'other',
       }),
@@ -42,14 +42,14 @@ describe('DefaultFilter', () => {
     });
 
     expect(
-      f.shouldLog({
+      f.filter({
         ...baseEvent(),
         context: { userId: 'blocked' },
       }),
     ).toBe(false);
 
     expect(
-      f.shouldLog({
+      f.filter({
         ...baseEvent(),
         context: { userId: 'ok' },
       }),
@@ -71,7 +71,7 @@ describe('DefaultFilter', () => {
       ],
     };
 
-    expect(f.shouldLog(e)).toBe(true);
+    expect(f.filter(e)).toBe(true);
   });
 
   it('uses deep equality for objects and arrays', () => {
@@ -83,7 +83,7 @@ describe('DefaultFilter', () => {
 
     // Allowed via deep equality on context
     expect(
-      f.shouldLog({
+      f.filter({
         ...baseEvent(),
         context: { meta: { a: 1, b: [1, 2, 3] } },
       }),
@@ -91,7 +91,7 @@ describe('DefaultFilter', () => {
 
     // Denied via deep equality on data[0]
     expect(
-      f.shouldLog({
+      f.filter({
         ...baseEvent(),
         data: [{ x: 1 }],
       }),
