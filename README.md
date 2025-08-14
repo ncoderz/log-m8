@@ -13,6 +13,7 @@ A lightweight, extensible logging library for TypeScript/JavaScript applications
 - [Built-in Appenders](#built-in-appenders)
 - [Default Formatter](#default-formatter)
 - [Default Filter](#default-filter)
+- [Filters Guide](#filters-guide)
 - [Runtime Control](#runtime-control)
 - [Custom Plugins](#custom-plugins)
 - [API Documentation](#api-documentation)
@@ -26,7 +27,8 @@ A lightweight, extensible logging library for TypeScript/JavaScript applications
 - **Plugin System**: Extensible appenders, formatters, and filters via factory pattern
 - **Built-in Appenders**: Console (Node.js/Browser) and File (Node.js) appenders included
 - **Flexible Formatting**: Default formatter with text/JSON modes, colors, and custom templates
-- **Runtime Control**: Enable/disable appenders and flush operations at runtime
+- **Filtering**: Global and per-appender filters with allow/deny rules and runtime toggling
+- **Runtime Control**: Enable/disable appenders and filters; flush operations at runtime
 - **Zero Dependencies**: Lightweight with minimal external dependencies
 
 ## Quick Start
@@ -82,14 +84,16 @@ Logging.init({
     'app.database': 'debug',
     'app.performance': 'trace',
   },
+
+  // Global filters (evaluated before any appender filters)
+  filters: [
+    { name: 'default-filter', deny: { 'context.userId': 'blocked' } },
+    { name: 'sensitive-data', enabled: true },
+  ],
+
   appenders: [
     {
       name: 'console',
-  // Global filters evaluated before appenders
-  filters: [
-    { name: 'default-filter', deny: { 'context.userId': 'blocked' } },
-    'sensitive-data'
-  ]
       enabled: true,
       priority: 10, // Higher priority executes first
       formatter: {
@@ -98,7 +102,11 @@ Logging.init({
         timestampFormat: 'hh:mm:ss.SSS',
         color: true,
       },
-  filters: ['sensitive-data'], // Appender-level filters
+      // Appender-level filters (evaluated after global filters)
+      filters: [
+        'sensitive-data',
+        { name: 'default-filter', allow: { logger: 'app.database' }, enabled: false }, // start disabled
+      ],
     },
     {
       name: 'file',
@@ -314,6 +322,10 @@ withCtx.setContext({ userId: 'blocked' });
 withCtx.info('denied due to context', { kind: 'ping' }); // denied by rule
 ```
 
+## Filters Guide
+
+Looking for more on filters, the `enabled` flag, global vs appender filters, and runtime toggling? See the dedicated Filters Guide in doc/filters.md.
+
 ## Runtime Control
 
 ### Appender Management
@@ -326,6 +338,18 @@ Logging.enableAppender('file');
 // Force flush buffered output
 Logging.flushAppender('file');
 Logging.flushAppenders(); // Flush all appenders
+```
+
+### Filter Management
+
+```typescript
+// Toggle filters globally
+Logging.disableFilter('sensitive-data');
+Logging.enableFilter('default-filter');
+
+// Toggle filters for a specific appender only
+Logging.disableFilter('sensitive-data', 'console');
+Logging.enableFilter('default-filter', 'console');
 ```
 
 ### Logger Context

@@ -22,6 +22,7 @@ This document provides comprehensive API documentation for the log-m8 logging li
   - [FileAppender](#fileappender)
   - [DefaultFormatter](#defaultformatter)
   - [DefaultFilter](#defaultfilter)
+  - [Filters Guide](#filters-guide)
 - [Utilities](#utilities)
   - [LogM8Utils](#logm8utils)
   - [LogLevel Enum](#loglevel-enum)
@@ -131,6 +132,8 @@ Disables a filter globally or for a specific appender when `appenderName` is pro
 **Parameters:**
 - `name` - Filter name to disable
 - `appenderName` - Optional appender name to scope the toggle
+
+See also the Filters Guide for end-to-end concepts and examples.
 
 ##### `registerPluginFactory(pluginFactory: PluginFactory): void`
 
@@ -487,6 +490,10 @@ interface DefaultFilterConfig extends FilterConfig {
 - Missing paths return `undefined` (no throw)
  - Filters have an `enabled` flag; disabled filters are skipped during evaluation
 
+### Filters Guide
+
+For a deeper dive into global vs appender filters, the `enabled` flag, and runtime toggling APIs, see the Filters Guide at [doc/filters.md](./filters.md).
+
 ### Global Filters
 
 Global filters are evaluated before any appender-level filters and can be toggled at runtime.
@@ -504,6 +511,8 @@ Logging.init({
 Logging.disableFilter('sensitive-data');           // globally
 Logging.enableFilter('default-filter', 'console'); // only for console appender
 ```
+
+For a conceptual overview and usage patterns, see the Filters Guide at [doc/filters.md](./filters.md).
 
 ## Utilities
 
