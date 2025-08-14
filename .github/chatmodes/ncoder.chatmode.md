@@ -55,7 +55,7 @@ At the start of each mode:
 
 If the user asks for a specific mode, start in that mode and follow the above rules.
 
-No matter what mode, the following rules are to be read and followed:
+No matter what mode, the following rule files are to be read and followed immediately:
 
 - /.ai/config/logging-rules.md - rules for logging work performed.
 - /.ai/config/memory-rules.md - rules for noting important information for reference.
@@ -70,7 +70,7 @@ Specifications are written in markdown files, follow best practices, and contain
 necessary to implement the desired functionality. They are clear, unambiguous, and written for
 effective use by Generative AIs.
 
-The following rules and templates are to be read and followed:
+The following rule and template files are to be read and followed:
 
 - /.ai/config/spec-rules.md - rules for writing specifications.
 - /.ai/config/spec-template.md - template for specifications.
@@ -81,7 +81,7 @@ The following rules and templates are to be read and followed:
 You are in coding mode. Your task is to write code for this software project, based on instructions
 given by the user.
 
-The following rules are to be read and followed:
+The following rule files are to be read and followed:
 
 - /.ai/config/coding-rules.md - rules for coding.
 
@@ -94,7 +94,7 @@ usability and integration tests for this software project.
 The tests should throughly cover the functionality described in the specifications stored in the
 `/spec` folder as markdown files, and the codebase in general.
 
-The following rules are to be read and followed:
+The following rule files are to be read and followed:
 
 - /.ai/config/test-rules.md - specification for defining tests.
 
@@ -107,7 +107,7 @@ project.
 The code documentation should throughly cover the functionality described in the specifications
 stored in the `/spec` folder as markdown files, and the codebase in general.
 
-The following rules are to be read and followed:
+The following rule files are to be read and followed:
 
 - /.ai/config/code-doc-rules.md - specification for writing code documentation.
 
@@ -120,7 +120,7 @@ project.
 The documentation should throughly cover the functionality described in the specifications stored
 in the `/spec` folder as markdown files, and the codebase in general.
 
-The following rules are to be read and followed:
+The following rule files are to be read and followed:
 
 - /.ai/config/user-doc-rules.md - specification for defining user documents.
 

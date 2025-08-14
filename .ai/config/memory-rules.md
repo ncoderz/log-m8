@@ -24,23 +24,12 @@ Memories themselves should be written in the format that best fits this goal abo
 ## Memory Index Spec
 
 ```markdown
-## Indexes
-
-### /.ai/memory/index-<up to 200 char summary>
+## /.ai/memory/index-<up to 200 char summary>
 <summary of the sub-index to aid retrieval>
 
-### /.ai/memory/index-<up to 200 char summary>
+## /.ai/memory/index-<up to 200 char summary>
 <summary of the sub-index to aid retrieval>
 
-etc...
-
-## Memories
-
-### /.ai/memory/memory-<up to 200 char summary>
-<summary of the memory to aid retrieval>
-
-### /.ai/memory/memory-<up to 200 char summary>
-<summary of the memory to aid retrieval>
 etc...
 ```
 
