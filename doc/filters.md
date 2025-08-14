@@ -6,7 +6,7 @@ This guide explains how filtering works in log-m8, including global vs appender-
 
 - Overview
 - Global Filters vs Appender Filters
-- DefaultFilter (allow/deny)
+- MatchFilter (allow/deny)
 - Initial Enabled State
 - Runtime Enable/Disable
 - Examples
@@ -18,7 +18,7 @@ At a glance:
 // Start with one disabled filter, one enabled
 Logging.init({
   filters: [
-    { name: 'default-filter', deny: { 'context.userId': 'blocked' } },
+    { name: 'match-filter', deny: { 'context.userId': 'blocked' } },
     { name: 'sensitive-data', enabled: false }, // skipped until enabled
   ],
   appenders: [ { name: 'console', formatter: 'default' } ]
@@ -26,7 +26,7 @@ Logging.init({
 
 // Runtime toggles
 Logging.enableFilter('sensitive-data');        // globally
-Logging.disableFilter('default-filter', 'console'); // scoped to console appender
+Logging.disableFilter('match-filter', 'console'); // scoped to console appender
 ```
 
 ## Overview
@@ -51,9 +51,9 @@ Ordering:
 - Appender filters are configured per appender in `AppenderConfig.filters`.
 - Disabled filters are skipped but left in place (preserve order semantics).
 
-## DefaultFilter (allow/deny)
+## MatchFilter (allow/deny)
 
-The built-in `default-filter` supports simple declarative rules:
+The built-in `match-filter` supports simple declarative rules:
 
 - allow: ALL rules must match (AND) when provided and non-empty
 - deny: ANY rule matching blocks (OR); deny takes precedence over allow
@@ -64,7 +64,7 @@ Example:
 
 ```ts
 {
-  name: 'default-filter',
+  name: 'match-filter',
   allow: { logger: 'app.service', 'data[0].kind': 'audit' },
   deny:  { 'context.userId': 'blocked' },
 }
@@ -79,7 +79,7 @@ All filters accept `enabled?: boolean` in their config:
 
 ```ts
 filters: [
-  { name: 'default-filter', deny: { 'context.userId': 'blocked' }, enabled: true },
+  { name: 'match-filter', deny: { 'context.userId': 'blocked' }, enabled: true },
   { name: 'sensitive-data', enabled: false }, // start disabled
 ]
 ```
@@ -111,7 +111,7 @@ Notes:
 Logging.init({
   level: 'info',
   filters: [ // global
-    { name: 'default-filter', deny: { 'context.userId': 'blocked' } },
+    { name: 'match-filter', deny: { 'context.userId': 'blocked' } },
   ],
   appenders: [
     {
@@ -119,7 +119,7 @@ Logging.init({
       formatter: { name: 'default', color: true },
       filters: [
         'sensitive-data',
-        { name: 'default-filter', allow: { logger: 'app.api' }, enabled: false },
+        { name: 'match-filter', allow: { logger: 'app.api' }, enabled: false },
       ],
     },
   ],
@@ -137,11 +137,11 @@ api.info('message with token=***');
 
 ```ts
 // Temporarily disable all filtering to diagnose issues
-Logging.disableFilter('default-filter');
+Logging.disableFilter('match-filter');
 Logging.disableFilter('sensitive-data');
 
 // Re-enable after investigation
-Logging.enableFilter('default-filter');
+Logging.enableFilter('match-filter');
 Logging.enableFilter('sensitive-data');
 ```
 

@@ -6,7 +6,7 @@ import type { PluginFactory } from '../PluginFactory.ts';
 import { PluginKind } from '../PluginKind.ts';
 
 /**
- * Configuration for DefaultFilter.
+ * Configuration for MatchFilter.
  *
  * Provides simple allow/deny rule maps where each key is a dot-path into the LogEvent
  * (supports array bracket notation like `data[0].items[2]`) and each value is the value
@@ -21,20 +21,20 @@ import { PluginKind } from '../PluginKind.ts';
  * Examples:
  * ```ts
  * // Only allow events from a specific logger AND with a specific data value
- * { name: 'default-filter', allow: { 'logger': 'app.service', 'data[0].type': 'audit' } }
+ * { name: 'match-filter', allow: { 'logger': 'app.service', 'data[0].type': 'audit' } }
  *
  * // Deny events for a user id regardless of other matches
- * { name: 'default-filter', deny: { 'context.userId': '1234' } }
+ * { name: 'match-filter', deny: { 'context.userId': '1234' } }
  *
  * // Combined example
  * {
- *   name: 'default-filter',
+ *   name: 'match-filter',
  *   allow: { 'logger': 'allow.this.logger', 'data[0].custom[3].path': 4 },
  *   deny:  { 'logger': 'block.this.logger', 'context.userId': '1234' }
  * }
  * ```
  */
-export interface DefaultFilterConfig extends FilterConfig {
+export interface MatchFilterConfig extends FilterConfig {
   /** All rules in this map must match for the event to be allowed (AND). */
   allow?: Record<string, unknown>;
   /** If any rule in this map matches, the event will be denied (OR). */
@@ -49,8 +49,8 @@ export interface DefaultFilterConfig extends FilterConfig {
  * `array[index]` notation). Comparisons use deep equality for objects/arrays and strict
  * equality for primitives.
  */
-class DefaultFilter implements Filter {
-  public name = 'default-filter';
+class MatchFilter implements Filter {
+  public name = 'match-filter';
   public version = '1.0.0';
   public kind = PluginKind.filter;
 
@@ -64,7 +64,7 @@ class DefaultFilter implements Filter {
    * @param config - Filter configuration with optional allow/deny maps
    */
   public init(config: FilterConfig): void {
-    const cfg = (config ?? {}) as DefaultFilterConfig;
+    const cfg = (config ?? {}) as MatchFilterConfig;
     this._allow = cfg.allow ?? undefined;
     this._deny = cfg.deny ?? undefined;
     this.enabled = cfg.enabled !== false; // Default to true if not specified
@@ -156,16 +156,16 @@ class DefaultFilter implements Filter {
   }
 }
 
-class DefaultFilterFactory implements PluginFactory<DefaultFilterConfig, DefaultFilter> {
-  public name = 'default-filter';
+class MatchFilterFactory implements PluginFactory<MatchFilterConfig, MatchFilter> {
+  public name = 'match-filter';
   public version = '1.0.0';
   public kind = PluginKind.filter;
 
-  public create(config: DefaultFilterConfig): DefaultFilter {
-    const filter = new DefaultFilter();
+  public create(config: MatchFilterConfig): MatchFilter {
+    const filter = new MatchFilter();
     filter.init(config);
     return filter;
   }
 }
 
-export { DefaultFilterFactory };
+export { MatchFilterFactory };

@@ -23,7 +23,7 @@ This document provides comprehensive API documentation for the log-m8 logging li
   - [ConsoleAppender](#consoleappender)
   - [FileAppender](#fileappender)
   - [DefaultFormatter](#defaultformatter)
-  - [DefaultFilter](#defaultfilter)
+  - [MatchFilter](#matchfilter)
   - [Filters Guide](#filters-guide)
 - [Utilities](#utilities)
   - [LogM8Utils](#logm8utils)
@@ -495,14 +495,14 @@ interface DefaultFormatterConfig extends FormatterConfig {
 
 ---
 
-### DefaultFilter
+### MatchFilter
 
 Built-in filter supporting declarative allow/deny matching using path-based rules.
 
 #### Configuration
 
 ```typescript
-interface DefaultFilterConfig extends FilterConfig {
+interface MatchFilterConfig extends FilterConfig {
   allow?: Record<string, unknown>; // AND semantics across all allow rules when provided
   deny?: Record<string, unknown>;  // OR semantics; any match denies (overrides allow)
 }
@@ -512,14 +512,14 @@ interface DefaultFilterConfig extends FilterConfig {
 
 ```typescript
 // Only allow specific logger and data value
-{ name: 'default-filter', allow: { logger: 'app.service', 'data[0].type': 'audit' } }
+{ name: 'match-filter', allow: { logger: 'app.service', 'data[0].type': 'audit' } }
 
 // Deny specific user
-{ name: 'default-filter', deny: { 'context.userId': '1234' } }
+{ name: 'match-filter', deny: { 'context.userId': '1234' } }
 
 // Combined allow + deny
 {
-  name: 'default-filter',
+  name: 'match-filter',
   allow: { logger: 'allow.this.logger', 'data[0].custom[3].path': 4 },
   deny:  { logger: 'block.this.logger', 'context.userId': '1234' }
 }
@@ -543,7 +543,7 @@ Global filters are evaluated before any appender-level filters and can be toggle
 ```typescript
 Logging.init({
   filters: [
-    { name: 'default-filter', deny: { 'context.userId': 'blocked' } },
+    { name: 'match-filter', deny: { 'context.userId': 'blocked' } },
     'sensitive-data'
   ],
   appenders: [ { name: 'console', formatter: 'default' } ]
@@ -551,7 +551,7 @@ Logging.init({
 
 // Toggle at runtime
 Logging.disableFilter('sensitive-data');           // globally
-Logging.enableFilter('default-filter', 'console'); // only for console appender
+Logging.enableFilter('match-filter', 'console'); // only for console appender
 ```
 
 For a conceptual overview and usage patterns, see the Filters Guide at [doc/filters.md](./filters.md).

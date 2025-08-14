@@ -2,7 +2,7 @@ import { Enum } from '@ncoderz/superenum';
 
 import { ConsoleAppenderFactory } from './appenders/ConsoleAppender.ts';
 import { FileAppenderFactory } from './appenders/FileAppender.ts';
-import { DefaultFilterFactory } from './filters/DefaultFilter.ts';
+import { MatchFilterFactory } from './filters/MatchFilter.ts';
 import { DefaultFormatterFactory } from './formatters/DefaultFormatter.ts';
 import type { Appender, AppenderConfig, Filter, Formatter } from './index.ts';
 import type { Log } from './Log.ts';
@@ -78,7 +78,7 @@ class LogM8 {
     this._pluginManager.registerPluginFactory(new ConsoleAppenderFactory());
     this._pluginManager.registerPluginFactory(new FileAppenderFactory());
     this._pluginManager.registerPluginFactory(new DefaultFormatterFactory());
-    this._pluginManager.registerPluginFactory(new DefaultFilterFactory());
+    this._pluginManager.registerPluginFactory(new MatchFilterFactory());
   }
 
   /**

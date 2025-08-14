@@ -12,7 +12,7 @@ A lightweight, extensible logging library for TypeScript/JavaScript applications
 - [Log Levels](#log-levels)
 - [Built-in Appenders](#built-in-appenders)
 - [Default Formatter](#default-formatter)
-- [Default Filter](#default-filter)
+- [Match Filter](#match-filter)
 - [Filters Guide](#filters-guide)
 - [Runtime Control](#runtime-control)
 - [Custom Plugins](#custom-plugins)
@@ -95,7 +95,7 @@ Logging.init({
 
   // Global filters (evaluated before any appender filters)
   filters: [
-    { name: 'default-filter', deny: { 'context.userId': 'blocked' } },
+    { name: 'match-filter', deny: { 'context.userId': 'blocked' } },
     { name: 'sensitive-data', enabled: true },
   ],
 
@@ -113,7 +113,7 @@ Logging.init({
       // Appender-level filters (evaluated after global filters)
       filters: [
         'sensitive-data',
-        { name: 'default-filter', allow: { logger: 'app.database' }, enabled: false }, // start disabled
+        { name: 'match-filter', allow: { logger: 'app.database' }, enabled: false }, // start disabled
       ],
     },
     {
@@ -260,7 +260,7 @@ timestampFormat: 'MM/dd/yyyy h:mm A'; // 08/04/2025 2:23 PM
 
 Supported tokens: `yyyy`, `yy`, `MM`, `dd`, `hh`, `h`, `mm`, `ss`, `SSS`, `SS`, `S`, `A`, `a`, `z`, `zz`
 
-## Default Filter
+## Match Filter
 
 Built-in filter providing simple allow/deny rules with path-based matching.
 
@@ -273,7 +273,7 @@ Built-in filter providing simple allow/deny rules with path-based matching.
   formatter: 'default',
   filters: [
     {
-      name: 'default-filter',
+      name: 'match-filter',
       allow: {
         logger: 'allow.this.logger',
         'data[0].custom[3].path': 4
@@ -312,7 +312,7 @@ Logging.init({
       formatter: 'default',
       filters: [
         {
-          name: 'default-filter',
+          name: 'match-filter',
           allow: { logger: 'demo', 'data[0].kind': 'ping' },
           deny: { 'context.userId': 'blocked' },
         },
@@ -353,11 +353,11 @@ Logging.flushAppenders(); // Flush all appenders
 ```typescript
 // Toggle filters globally
 Logging.disableFilter('sensitive-data');
-Logging.enableFilter('default-filter');
+Logging.enableFilter('match-filter');
 
 // Toggle filters for a specific appender only
 Logging.disableFilter('sensitive-data', 'console');
-Logging.enableFilter('default-filter', 'console');
+Logging.enableFilter('match-filter', 'console');
 ```
 
 Notes:

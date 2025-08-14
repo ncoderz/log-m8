@@ -14,7 +14,7 @@ Define the behavior and interface of Filter plugins that allow appenders to dete
 - Provide a Filter interface extending Plugin
 - Allow appenders to evaluate filters before logging events
 - Support custom filter implementations through the plugin system
-- Provide a built-in DefaultFilter for declarative allow/deny matching
+- Provide a built-in MatchFilter for declarative allow/deny matching
 
 ### What the system will not do:
 - Mutate or transform log events (filters only allow/deny)
@@ -34,7 +34,7 @@ Filters are plugins created and used by appenders during the logging process. Ea
 1. Simple boolean evaluation interface via `filter` method
 2. Plugin-based architecture for custom implementations
 3. Integration with appender logging workflow
-4. Built-in DefaultFilter supporting allow/deny maps with path-based matching
+4. Built-in MatchFilter supporting allow/deny maps with path-based matching
 5. Runtime enable/disable at global level and per-appender
 
 ## 5. User Stories
@@ -50,11 +50,11 @@ Filters are plugins created and used by appenders during the logging process. Ea
 - FR-FLTR-003: Filters must be synchronous and return boolean values quickly
 - FR-FLTR-004: Filters must not mutate the LogEvent or its properties
 - FR-FLTR-005: When no filters are configured, appenders proceed with logging (subject to other constraints)
-- FR-FLTR-006: DefaultFilter shall support configuration with optional `allow` and `deny` maps
-- FR-FLTR-007: DefaultFilter `allow` map requires ALL rules to match (logical AND) when provided and non-empty
-- FR-FLTR-008: DefaultFilter `deny` map blocks when ANY rule matches (logical OR); deny takes precedence over allow
-- FR-FLTR-009: DefaultFilter shall resolve values using dot-paths and bracket indices (e.g., `context.userId`, `data[0].custom[3].path`)
-- FR-FLTR-010: DefaultFilter comparisons use deep equality for arrays/objects and strict equality for primitives; Dates compare by time value; NaN equals NaN
+- FR-FLTR-006: MatchFilter shall support configuration with optional `allow` and `deny` maps
+- FR-FLTR-007: MatchFilter `allow` map requires ALL rules to match (logical AND) when provided and non-empty
+- FR-FLTR-008: MatchFilter `deny` map blocks when ANY rule matches (logical OR); deny takes precedence over allow
+- FR-FLTR-009: MatchFilter shall resolve values using dot-paths and bracket indices (e.g., `context.userId`, `data[0].custom[3].path`)
+- FR-FLTR-010: MatchFilter comparisons use deep equality for arrays/objects and strict equality for primitives; Dates compare by time value; NaN equals NaN
 - FR-FLTR-011: Filters expose an `enabled` flag (default true) that can be set via configuration and toggled at runtime; disabled filters are skipped without affecting order.
 - FR-FLTR-012: The manager shall provide enableFilter(name, appenderName?) and disableFilter(name, appenderName?) to toggle global filters or appender-local filters when an appender name is provided.
 - FR-FLTR-013: Appenders shall implement enableFilter(name) and disableFilter(name) for toggling their filter instances.
@@ -64,7 +64,7 @@ Filters are plugins created and used by appenders during the logging process. Ea
 ### 7.1 Performance & Capacity
 - NFR-FLTR-001: Filter evaluation should be fast and avoid unnecessary allocations
 - NFR-FLTR-002: Multiple filters should evaluate in O(n) time
-- NFR-FLTR-004: DefaultFilter path resolution must be robust and avoid throwing on missing paths (returns undefined)
+- NFR-FLTR-004: MatchFilter path resolution must be robust and avoid throwing on missing paths (returns undefined)
 
 ### 7.2 Compatibility
 - NFR-FLTR-003: Filters must work in both Node.js and browser environments
@@ -79,7 +79,7 @@ Filters are plugins created and used by appenders during the logging process. Ea
 ### Assumptions:
 - Custom filter implementations are provided by users
 - Filter factories are registered before Log-M8 initialization
-- DefaultFilter is registered by default and available via factory name `default-filter`
+- MatchFilter is registered by default and available via factory name `match-filter`
 
 ## 9. API (Smithy IDL)
 
@@ -97,8 +97,8 @@ structure FilterConfig extends PluginConfig {
     enabled: Boolean
 }
 
-// Configuration for the built-in DefaultFilter
-structure DefaultFilterConfig extends FilterConfig {
+// Configuration for the built-in MatchFilter
+structure MatchFilterConfig extends FilterConfig {
     // Map of path => expected value; ALL must match to allow (when provided)
     allow: Document
     // Map of path => expected value; ANY match denies (takes precedence)
@@ -132,7 +132,7 @@ structure ShouldLogOutput {
 // - Filters are implemented as TypeScript/JavaScript classes extending Plugin
 // - filter() is called synchronously by appenders during write()
 // - Filter instances are created per appender during initialization
-// - DefaultFilter factory name: "default-filter"; supports `allow` (AND) and `deny` (OR) maps
+// - MatchFilter factory name: "match-filter"; supports `allow` (AND) and `deny` (OR) maps
 // - Path resolution supports dot and bracket notation (e.g., data[0].x)
 // - Disabled filters are skipped; global filters (from LoggingConfig) run before appender-level filters
 ```
@@ -152,12 +152,12 @@ None.
 - Appenders call filter() on each filter in sequence before logging
 - When any filter returns false, the event is not logged by that appender
 - Filters cannot modify the LogEvent being evaluated
-- DefaultFilter evaluates allow/deny rules as specified and supports bracket/dot path lookups
-- DefaultFilter is registered by default and can be configured by name in appender configs
+- MatchFilter evaluates allow/deny rules as specified and supports bracket/dot path lookups
+- MatchFilter is registered by default and can be configured by name in appender configs
 
 ## References
 
 - Root: [/spec/spec.md](/spec/spec.md)
 - Plugins: [/spec/spec-plugins.md](/spec/spec-plugins.md)
 - Code: `src/Filter.ts`, `src/FilterConfig.ts`, `src/PluginManager.ts`
-- Built-in: `src/filters/DefaultFilter.ts`, `src/LogM8Utils.ts` (path traversal)
+- Built-in: `src/filters/MatchFilter.ts`, `src/LogM8Utils.ts` (path traversal)

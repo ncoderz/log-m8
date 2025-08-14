@@ -1,3 +1,7 @@
+---
+applyTo: "**"
+---
+
 # AI Logging Instructions
 
 As an AI, you will log your actions and decisions in a structured manner to ensure traceability and
