@@ -29,7 +29,7 @@ A lightweight, extensible logging library for TypeScript/JavaScript applications
 - **Flexible Formatting**: Default formatter with text/JSON modes, colors, and custom templates
 - **Filtering**: Global and per-appender filters with allow/deny rules and runtime toggling
 - **Runtime Control**: Enable/disable appenders and filters; flush operations at runtime
-- **Zero Dependencies**: Lightweight with minimal external dependencies
+- **Minimal Dependencies**: Lightweight with a small dependency footprint
 
 ## Quick Start
 
@@ -43,6 +43,14 @@ Logging.init();
 const logger = Logging.getLogger('app');
 logger.info('Application started');
 logger.debug('Debug information', { userId: 123 });
+```
+
+CommonJS:
+
+```js
+// cjs
+const { Logging } = require('log-m8');
+Logging.init();
 ```
 
 ## Installation
@@ -352,6 +360,10 @@ Logging.disableFilter('sensitive-data', 'console');
 Logging.enableFilter('default-filter', 'console');
 ```
 
+Notes:
+- Appenders and filters default to enabled unless `enabled: false` is provided in config.
+- Disabled filters are skipped during evaluation but their position in the order is preserved.
+
 ### Logger Context
 
 ```typescript
@@ -383,6 +395,7 @@ class DatabaseAppender implements Appender {
   kind = PluginKind.appender;
   supportedLevels = new Set(['error', 'fatal']);
   enabled = true;
+  priority = 0;
 
   init(config: AppenderConfig) {
     // Initialize database connection
@@ -399,6 +412,10 @@ class DatabaseAppender implements Appender {
   dispose() {
     // Clean up resources
   }
+
+  // Required by Appender interface; implement as needed
+  enableFilter(_name: string): void {}
+  disableFilter(_name: string): void {}
 }
 
 // Register before init()
@@ -408,18 +425,23 @@ Logging.registerPluginFactory(new DatabaseAppenderFactory());
 ### Custom Filter
 
 ```typescript
-import { Filter, LogEvent } from 'log-m8';
+import { Filter, LogEvent, PluginKind } from 'log-m8';
 
 class SensitiveDataFilter implements Filter {
   name = 'sensitive-data';
   version = '1.0.0';
   kind = PluginKind.filter;
+  enabled = true; // Required by Filter interface
+
+  init(): void {}
 
   filter(event: LogEvent): boolean {
     // Return false to skip events containing sensitive data
-    const message = String(event.message);
+    const message = String(event.message ?? '');
     return !message.includes('password') && !message.includes('token');
   }
+
+  dispose(): void {}
 }
 ```
 
@@ -437,7 +459,8 @@ logger.debug('Loading configuration');
 // Initialize logging system
 Logging.init({ level: 'info' });
 
-// Buffered events are flushed, then new events process normally
+// Buffered events are flushed on the first post-init log emission,
+// then new events process normally
 logger.info('Application ready'); // This triggers buffer flush + processes normally
 ```
 
@@ -503,7 +526,8 @@ For comprehensive API documentation including detailed method signatures, config
 - **Node.js**: Full functionality including file appender and ANSI colors
 - **Browser**: Console appender with CSS styling, no file operations
 - **Automatic Detection**: Environment-specific features enabled automatically
+ - Tested on Node.js 18+; ESM and CJS builds provided. TypeScript definitions included.
 
 ## License
 
-MIT License - see LICENSE file for details.
+BSD-2-Clause — see the LICENSE file for details.

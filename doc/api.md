@@ -17,6 +17,8 @@ This document provides comprehensive API documentation for the log-m8 logging li
   - [Plugin Interface](#plugin-interface)
   - [PluginFactory Interface](#pluginfactory-interface)
   - [PluginKind Enum](#pluginkind-enum)
+  - [Appender Interface](#appender-interface)
+  - [Filter Interface](#filter-interface)
 - [Built-in Plugins](#built-in-plugins)
   - [ConsoleAppender](#consoleappender)
   - [FileAppender](#fileappender)
@@ -341,6 +343,46 @@ enum PluginKind {
 
 ---
 
+### Appender Interface
+
+Contract for output plugins that process formatted log events.
+
+```typescript
+interface Appender extends Plugin {
+  readonly supportedLevels: Set<LogLevelType>;
+  enabled: boolean;
+  priority?: number;
+  init(config: AppenderConfig, formatter?: Formatter, filters?: Filter[]): void;
+  write(event: LogEvent): void;
+  flush(): void;
+  dispose(): void;
+  enableFilter(name: string): void;
+  disableFilter(name: string): void;
+}
+```
+
+Notes:
+- supportedLevels is used to skip events outside the appender's range.
+- enabled defaults to true unless set to false in config.
+- enableFilter/disableFilter toggle appender-local filter instances.
+
+### Filter Interface
+
+Contract for filter plugins that decide whether to emit an event.
+
+```typescript
+interface Filter extends Plugin {
+  enabled: boolean; // runtime toggle
+  init(config: FilterConfig): void;
+  filter(event: LogEvent): boolean;
+  dispose(): void;
+}
+```
+
+Notes:
+- enabled defaults to true; disabled filters are skipped.
+- See Filters Guide for global vs appender scope and runtime toggling.
+
 ## Built-in Plugins
 
 ### ConsoleAppender
@@ -513,6 +555,10 @@ Logging.enableFilter('default-filter', 'console'); // only for console appender
 ```
 
 For a conceptual overview and usage patterns, see the Filters Guide at [doc/filters.md](./filters.md).
+
+---
+
+Back to README: [../README.md](../README.md)
 
 ## Utilities
 
