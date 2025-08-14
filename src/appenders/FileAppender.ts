@@ -63,7 +63,7 @@ class FileAppender implements Appender {
 
     // Filter
     for (const filter of this._filters) {
-      if (!filter.shouldLog(event)) {
+      if (filter.enabled && !filter.filter(event)) {
         return; // Skip if any filter denies logging
       }
     }
@@ -87,6 +87,22 @@ class FileAppender implements Appender {
 
   public flush(): void {
     // No-op for file appender; data is flushed on stream end.
+  }
+
+  public enableFilter(name: string): void {
+    const filter = this._getFilter(name);
+    if (!filter) return;
+    filter.enabled = true;
+  }
+
+  public disableFilter(name: string): void {
+    const filter = this._getFilter(name);
+    if (!filter) return;
+    filter.enabled = false;
+  }
+
+  private _getFilter(name: string): Filter | undefined {
+    return this._filters.find((f) => f.name === name);
   }
 }
 

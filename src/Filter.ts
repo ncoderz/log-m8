@@ -7,6 +7,14 @@ import type { Plugin } from './Plugin.ts';
  */
 export interface Filter extends Plugin {
   /**
+   * Runtime flag controlling whether this filter processes events.
+   *
+   * Can be toggled via LogM8.enableFilter()/disableFilter() for
+   * dynamic output control without full reconfiguration.
+   */
+  enabled: boolean;
+
+  /**
    * Initializes the filter with the specified configuration.
    * @param config - Filter configuration options.
    */
@@ -17,5 +25,12 @@ export interface Filter extends Plugin {
    * @param logEvent - The log event to evaluate.
    * @returns boolean indicating if the event should be logged.
    */
-  shouldLog(logEvent: LogEvent): boolean;
+  filter(logEvent: LogEvent): boolean;
+
+  /**
+   * Disposes of the filter, cleaning up any resources.
+   *
+   * Called during parent's dispose() to clean up the filter's resources.
+   */
+  dispose(): void;
 }

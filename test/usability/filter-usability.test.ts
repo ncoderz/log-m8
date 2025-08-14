@@ -17,6 +17,8 @@ describe('Filter Usability Tests', () => {
       version = '1.0.0';
       kind = PluginKind.filter;
 
+      enabled = true;
+
       init(_config: FilterConfig): void {
         // Simple filters may not need complex initialization
       }
@@ -25,7 +27,7 @@ describe('Filter Usability Tests', () => {
         // Simple cleanup
       }
 
-      shouldLog(logEvent: LogEvent): boolean {
+      filter(logEvent: LogEvent): boolean {
         // Intuitive: return true to allow, false to deny
         return logEvent.level !== LogLevel.debug;
       }
@@ -38,7 +40,7 @@ describe('Filter Usability Tests', () => {
     expect(filter.version).toBe('1.0.0');
     expect(filter.kind).toBe(PluginKind.filter);
 
-    // shouldLog should be easy to understand
+    // filter should be easy to understand
     const debugEvent: LogEvent = {
       logger: 'test',
       level: LogLevel.debug,
@@ -57,8 +59,8 @@ describe('Filter Usability Tests', () => {
       timestamp: new Date(),
     };
 
-    expect(filter.shouldLog(debugEvent)).toBe(false); // Clear: debug is filtered
-    expect(filter.shouldLog(infoEvent)).toBe(true); // Clear: info is allowed
+    expect(filter.filter(debugEvent)).toBe(false); // Clear: debug is filtered
+    expect(filter.filter(infoEvent)).toBe(true); // Clear: info is allowed
   });
 
   it('should support common filtering patterns with minimal code', () => {
@@ -67,6 +69,8 @@ describe('Filter Usability Tests', () => {
       name = 'level';
       version = '1.0.0';
       kind = PluginKind.filter;
+
+      enabled = true;
       private minLevel: LogLevelType = LogLevel.info;
 
       init(config: FilterConfig): void {
@@ -79,7 +83,7 @@ describe('Filter Usability Tests', () => {
 
       dispose(): void {}
 
-      shouldLog(logEvent: LogEvent): boolean {
+      filter(logEvent: LogEvent): boolean {
         const levels: LogLevelType[] = [
           LogLevel.fatal,
           LogLevel.error,
@@ -102,6 +106,8 @@ describe('Filter Usability Tests', () => {
       name = 'logger';
       version = '1.0.0';
       kind = PluginKind.filter;
+
+      enabled = true;
       private pattern = '';
 
       init(config: FilterConfig): void {
@@ -112,7 +118,7 @@ describe('Filter Usability Tests', () => {
 
       dispose(): void {}
 
-      shouldLog(logEvent: LogEvent): boolean {
+      filter(logEvent: LogEvent): boolean {
         return logEvent.logger.includes(this.pattern);
       }
     }
@@ -133,8 +139,8 @@ describe('Filter Usability Tests', () => {
     };
 
     // Both filters should work intuitively
-    expect(levelFilter.shouldLog(testEvent)).toBe(true); // error >= warn
-    expect(loggerFilter.shouldLog(testEvent)).toBe(true); // 'app.service' includes 'app.'
+    expect(levelFilter.filter(testEvent)).toBe(true); // error >= warn
+    expect(loggerFilter.filter(testEvent)).toBe(true); // 'app.service' includes 'app.'
   });
 
   it('should provide clear configuration patterns', () => {
@@ -143,6 +149,8 @@ describe('Filter Usability Tests', () => {
       name = 'configurable';
       version = '1.0.0';
       kind = PluginKind.filter;
+
+      enabled = true;
       private config: Record<string, unknown> = {};
 
       init(config: FilterConfig): void {
@@ -152,7 +160,7 @@ describe('Filter Usability Tests', () => {
 
       dispose(): void {}
 
-      shouldLog(_logEvent: LogEvent): boolean {
+      filter(_logEvent: LogEvent): boolean {
         // Config should be easily accessible
         return this.config.enabled !== false;
       }
@@ -168,11 +176,11 @@ describe('Filter Usability Tests', () => {
     };
 
     expect(() => filter.init(simpleConfig)).not.toThrow();
-    expect(filter.shouldLog({} as LogEvent)).toBe(true);
+    expect(filter.filter({} as LogEvent)).toBe(true);
 
     // Disabling should be intuitive
     filter.init({ name: 'test', enabled: false });
-    expect(filter.shouldLog({} as LogEvent)).toBe(false);
+    expect(filter.filter({} as LogEvent)).toBe(false);
   });
 
   it('should integrate easily with LogM8', () => {
@@ -182,10 +190,12 @@ describe('Filter Usability Tests', () => {
       version = '1.0.0';
       kind = PluginKind.filter;
 
+      enabled = true;
+
       init(_config: FilterConfig): void {}
       dispose(): void {}
 
-      shouldLog(logEvent: LogEvent): boolean {
+      filter(logEvent: LogEvent): boolean {
         return !String(logEvent.message).includes('skip');
       }
     }
@@ -231,7 +241,8 @@ describe('Filter Usability Tests', () => {
       name = 'defaults';
       version = '1.0.0';
       kind = PluginKind.filter;
-      private enabled = true; // Sensible default
+
+      enabled = true; // Sensible default
 
       init(config: FilterConfig): void {
         // Provide reasonable defaults
@@ -240,7 +251,7 @@ describe('Filter Usability Tests', () => {
 
       dispose(): void {}
 
-      shouldLog(_logEvent: LogEvent): boolean {
+      filter(_logEvent: LogEvent): boolean {
         return this.enabled;
       }
     }
@@ -249,11 +260,11 @@ describe('Filter Usability Tests', () => {
 
     // Should work with minimal config
     filter.init({ name: 'test' });
-    expect(filter.shouldLog({} as LogEvent)).toBe(true);
+    expect(filter.filter({} as LogEvent)).toBe(true);
 
     // But still allow customization
     filter.init({ name: 'test', enabled: false });
-    expect(filter.shouldLog({} as LogEvent)).toBe(false);
+    expect(filter.filter({} as LogEvent)).toBe(false);
   });
 
   it('should handle edge cases gracefully', () => {
@@ -261,12 +272,14 @@ describe('Filter Usability Tests', () => {
     class RobustFilter implements Filter {
       name = 'robust';
       version = '1.0.0';
+
+      enabled = true;
       kind = PluginKind.filter;
 
       init(_config: FilterConfig): void {}
       dispose(): void {}
 
-      shouldLog(logEvent: LogEvent): boolean {
+      filter(logEvent: LogEvent): boolean {
         try {
           // Defensive programming - handle any input gracefully
           if (!logEvent || typeof logEvent !== 'object') {
@@ -288,10 +301,10 @@ describe('Filter Usability Tests', () => {
     const filter = new RobustFilter();
 
     // Should handle various edge cases
-    expect(filter.shouldLog(null as unknown as LogEvent)).toBe(false);
-    expect(filter.shouldLog(undefined as unknown as LogEvent)).toBe(false);
-    expect(filter.shouldLog('string' as unknown as LogEvent)).toBe(false);
-    expect(filter.shouldLog({} as LogEvent)).toBe(false);
+    expect(filter.filter(null as unknown as LogEvent)).toBe(false);
+    expect(filter.filter(undefined as unknown as LogEvent)).toBe(false);
+    expect(filter.filter('string' as unknown as LogEvent)).toBe(false);
+    expect(filter.filter({} as LogEvent)).toBe(false);
 
     // But work normally with valid input
     const validEvent: LogEvent = {
@@ -303,7 +316,7 @@ describe('Filter Usability Tests', () => {
       timestamp: new Date(),
     };
 
-    expect(filter.shouldLog(validEvent)).toBe(true);
+    expect(filter.filter(validEvent)).toBe(true);
   });
 
   it('should support composition and chaining patterns', () => {
@@ -312,6 +325,8 @@ describe('Filter Usability Tests', () => {
       name = 'composable';
       version = '1.0.0';
       kind = PluginKind.filter;
+
+      enabled = true;
       private allowFunction: (event: LogEvent) => boolean = () => true;
 
       constructor(allowFn?: (event: LogEvent) => boolean) {
@@ -323,7 +338,7 @@ describe('Filter Usability Tests', () => {
       init(_config: FilterConfig): void {}
       dispose(): void {}
 
-      shouldLog(logEvent: LogEvent): boolean {
+      filter(logEvent: LogEvent): boolean {
         return this.allowFunction(logEvent);
       }
     }
@@ -355,11 +370,11 @@ describe('Filter Usability Tests', () => {
     };
 
     // Each filter should work as expected
-    expect(levelFilter.shouldLog(testEvent)).toBe(true);
-    expect(levelFilter.shouldLog(wrongLevelEvent)).toBe(false);
+    expect(levelFilter.filter(testEvent)).toBe(true);
+    expect(levelFilter.filter(wrongLevelEvent)).toBe(false);
 
-    expect(loggerFilter.shouldLog(testEvent)).toBe(true);
-    expect(loggerFilter.shouldLog(wrongLoggerEvent)).toBe(false);
+    expect(loggerFilter.filter(testEvent)).toBe(true);
+    expect(loggerFilter.filter(wrongLoggerEvent)).toBe(false);
   });
 
   it('should provide clear error messages for common mistakes', () => {
@@ -368,6 +383,8 @@ describe('Filter Usability Tests', () => {
       name = 'helpful';
       version = '1.0.0';
       kind = PluginKind.filter;
+
+      enabled = true;
       private requiredField?: string;
 
       init(config: FilterConfig): void {
@@ -383,7 +400,7 @@ describe('Filter Usability Tests', () => {
 
       dispose(): void {}
 
-      shouldLog(_logEvent: LogEvent): boolean {
+      filter(_logEvent: LogEvent): boolean {
         return Boolean(this.requiredField);
       }
     }

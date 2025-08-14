@@ -61,8 +61,9 @@ const DEFAULT_APPENDERS = [
 class LogM8 {
   private _initialized = false;
   private _pluginManager: PluginManager = new PluginManager();
-  private _appenders: Appender[] = [];
   private _loggers: Map<string, Log> = new Map();
+  private _appenders: Appender[] = [];
+  private _filters: Filter[] = [];
 
   private _defaultLevel: LogLevelType = LogLevel.info;
   private _logLevelValues = Enum(LogLevel).values();
@@ -155,6 +156,18 @@ class LogM8 {
 
     // Sort the appenders by their priority
     this._sortAppenders();
+
+    // Set up global filters
+    for (const filterConfig of config.filters ?? []) {
+      const filter = this._pluginManager.createPlugin(PluginKind.filter, filterConfig);
+      if (filter) {
+        this._filters.push(filter as Filter);
+      } else {
+        if (console && console.log) {
+          console.log(`LogM8: Filter '${filterConfig}' not found (global).`);
+        }
+      }
+    }
 
     this._initialized = true;
   }
@@ -300,6 +313,26 @@ class LogM8 {
     }
   }
 
+  public enableFilter(name: string, appenderName?: string): void {
+    if (appenderName) {
+      this._getAppender(appenderName)?.enableFilter(name);
+      return;
+    }
+    const filter = this._getFilter(name);
+    if (!filter) return;
+    filter.enabled = true;
+  }
+
+  public disableFilter(name: string, appenderName?: string): void {
+    if (appenderName) {
+      this._getAppender(appenderName)?.disableFilter(name);
+      return;
+    }
+    const filter = this._getFilter(name);
+    if (!filter) return;
+    filter.enabled = false;
+  }
+
   /**
    * Registers a custom plugin factory for appenders, formatters, or filters.
    *
@@ -384,6 +417,14 @@ class LogM8 {
   }
 
   private _processLogEvent(event: LogEvent): void {
+    // Filter
+    for (const filter of this._filters) {
+      if (filter.enabled && !filter.filter(event)) {
+        return; // Skip if any filter denies logging
+      }
+    }
+
+    // Process each appender (they should be in their priority order)
     for (const appender of this._appenders) {
       try {
         if (!appender.enabled) continue;
@@ -398,7 +439,7 @@ class LogM8 {
   }
 
   private _getAppender(name: string): Appender | undefined {
-    return this._appenders.find((appender) => appender.name === name);
+    return this._appenders.find((a) => a.name === name);
   }
 
   private _sortAppenders(): void {
@@ -408,6 +449,10 @@ class LogM8 {
       const bPriority = b?.priority ?? 0;
       return bPriority - aPriority; // Higher priority first
     });
+  }
+
+  private _getFilter(name: string): Filter | undefined {
+    return this._filters.find((f) => f.name === name);
   }
 
   private _reset(): void {

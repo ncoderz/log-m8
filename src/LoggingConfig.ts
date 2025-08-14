@@ -1,4 +1,5 @@
 import type { AppenderConfig } from './AppenderConfig.ts';
+import type { FilterConfig } from './FilterConfig.ts';
 import type { LogLevelType } from './LogLevel.ts';
 
 /**
@@ -77,4 +78,6 @@ export interface LoggingConfig {
    * deterministic output behavior.
    */
   appenders?: AppenderConfig[];
+
+  filters?: (string | FilterConfig)[];
 }

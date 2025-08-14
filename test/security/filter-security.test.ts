@@ -13,6 +13,7 @@ class SecurityTestFilter implements Filter {
   name = 'security-test';
   version = '1.0.0';
   kind = PluginKind.filter;
+  enabled = true;
 
   init(_config: FilterConfig): void {
     // No initialization needed
@@ -22,7 +23,7 @@ class SecurityTestFilter implements Filter {
     // No cleanup needed
   }
 
-  shouldLog(logEvent: LogEvent): boolean {
+  filter(logEvent: LogEvent): boolean {
     try {
       // Safely access properties without modifying them
       const hasLogger = typeof logEvent.logger === 'string';
@@ -80,7 +81,7 @@ describe('Filter Security Tests', () => {
 
     // All malformed events should be handled gracefully
     for (const event of malformedEvents) {
-      expect(() => filter.shouldLog(event)).not.toThrow();
+      expect(() => filter.filter(event)).not.toThrow();
       // The specific result depends on implementation, but it should not crash
     }
   });
@@ -100,7 +101,7 @@ describe('Filter Security Tests', () => {
       constructor: { prototype: { polluted: true } },
     } as unknown as LogEvent;
 
-    expect(() => filter.shouldLog(maliciousEvent)).not.toThrow();
+    expect(() => filter.filter(maliciousEvent)).not.toThrow();
 
     // Verify that prototype pollution didn't occur
     expect((Object.prototype as unknown as Record<string, unknown>).polluted).toBeUndefined();
@@ -128,7 +129,7 @@ describe('Filter Security Tests', () => {
     let result: boolean;
 
     expect(() => {
-      result = filter.shouldLog(largeEvent);
+      result = filter.filter(largeEvent);
     }).not.toThrow();
 
     const duration = Date.now() - startTime;
@@ -155,7 +156,7 @@ describe('Filter Security Tests', () => {
     };
 
     // Should handle circular references without infinite loops
-    expect(() => filter.shouldLog(circularEvent)).not.toThrow();
+    expect(() => filter.filter(circularEvent)).not.toThrow();
   });
 
   it('should safely handle LogEvent with malicious getters', () => {
@@ -174,7 +175,7 @@ describe('Filter Security Tests', () => {
     } as unknown as LogEvent;
 
     // Should handle getter errors gracefully
-    expect(() => filter.shouldLog(maliciousEvent)).not.toThrow();
+    expect(() => filter.filter(maliciousEvent)).not.toThrow();
   });
 
   it('should prevent information leakage through error messages', () => {
@@ -183,12 +184,13 @@ describe('Filter Security Tests', () => {
       name = 'leaky';
       version = '1.0.0';
       kind = PluginKind.filter;
+      enabled = true;
       private secretToken = 'secret-123-token';
 
       init(_config: FilterConfig): void {}
       dispose(): void {}
 
-      shouldLog(logEvent: LogEvent): boolean {
+      filter(logEvent: LogEvent): boolean {
         try {
           // Simulate checking against secret data
           if (logEvent.message === this.secretToken) {
@@ -214,7 +216,7 @@ describe('Filter Security Tests', () => {
     };
 
     // Normal operation should work
-    expect(filter.shouldLog(testEvent)).toBe(true);
+    expect(filter.filter(testEvent)).toBe(true);
 
     // Secret should be filtered but not leak in normal flow
     const secretEvent: LogEvent = {
@@ -222,7 +224,7 @@ describe('Filter Security Tests', () => {
       message: 'secret-123-token',
     };
 
-    expect(filter.shouldLog(secretEvent)).toBe(false);
+    expect(filter.filter(secretEvent)).toBe(false);
   });
 
   it('should handle malicious filter configuration safely', () => {
@@ -274,7 +276,7 @@ describe('Filter Security Tests', () => {
 
     // Process all events
     for (const event of events) {
-      expect(() => filter.shouldLog(event)).not.toThrow();
+      expect(() => filter.filter(event)).not.toThrow();
     }
 
     const duration = Date.now() - startTime;
@@ -289,6 +291,7 @@ describe('Filter Security Tests', () => {
       name = 'stateful';
       version = '1.0.0';
       kind = PluginKind.filter;
+      enabled = true;
       private seenLoggers = new Set<string>();
 
       init(_config: FilterConfig): void {}
@@ -296,7 +299,7 @@ describe('Filter Security Tests', () => {
         this.seenLoggers.clear();
       }
 
-      shouldLog(logEvent: LogEvent): boolean {
+      filter(logEvent: LogEvent): boolean {
         // Track loggers (this is allowed internal state)
         this.seenLoggers.add(logEvent.logger);
 
@@ -326,10 +329,10 @@ describe('Filter Security Tests', () => {
     };
 
     // Public should pass
-    expect(filter.shouldLog(publicEvent)).toBe(true);
+    expect(filter.filter(publicEvent)).toBe(true);
 
     // Private should be filtered
-    expect(filter.shouldLog(privateEvent)).toBe(false);
+    expect(filter.filter(privateEvent)).toBe(false);
 
     // Filter state should be properly isolated per appender instance
     filter.dispose();

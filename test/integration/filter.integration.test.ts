@@ -17,6 +17,7 @@ class ErrorOnlyFilter implements Filter {
   readonly name = 'error-only';
   readonly version = '1.0.0';
   readonly kind: PluginKindType = PluginKind.filter;
+  enabled = true;
 
   init(_config: FilterConfig): void {
     // No initialization needed
@@ -26,7 +27,7 @@ class ErrorOnlyFilter implements Filter {
     // No cleanup needed
   }
 
-  shouldLog(logEvent: LogEvent): boolean {
+  filter(logEvent: LogEvent): boolean {
     return logEvent.level === LogLevel.error || logEvent.level === LogLevel.fatal;
   }
 }
@@ -38,6 +39,7 @@ class LoggerDenyFilter implements Filter {
   readonly name = 'logger-deny';
   readonly version = '1.0.0';
   readonly kind: PluginKindType = PluginKind.filter;
+  enabled = true;
   private deniedLoggers: string[] = [];
 
   init(config: FilterConfig): void {
@@ -50,7 +52,7 @@ class LoggerDenyFilter implements Filter {
     // No cleanup needed
   }
 
-  shouldLog(logEvent: LogEvent): boolean {
+  filter(logEvent: LogEvent): boolean {
     return !this.deniedLoggers.includes(logEvent.logger);
   }
 }
@@ -212,16 +214,17 @@ describe('Filter Integration Tests', () => {
   it('should handle filters that throw during evaluation', () => {
     const logM8 = new LogM8();
 
-    // Create a filter that throws during shouldLog
+    // Create a filter that throws during filter
     class ThrowingFilter implements Filter {
       name = 'throwing';
       version = '1.0.0';
       kind = PluginKind.filter;
+      enabled = true;
 
       init(_config: FilterConfig): void {}
       dispose(): void {}
 
-      shouldLog(_logEvent: LogEvent): boolean {
+      filter(_logEvent: LogEvent): boolean {
         throw new Error('Filter evaluation error');
       }
     }

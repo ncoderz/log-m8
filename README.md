@@ -311,7 +311,7 @@ class SensitiveDataFilter implements Filter {
   version = '1.0.0';
   kind = PluginKind.filter;
 
-  shouldLog(event: LogEvent): boolean {
+  filter(event: LogEvent): boolean {
     // Return false to skip events containing sensitive data
     const message = String(event.message);
     return !message.includes('password') && !message.includes('token');

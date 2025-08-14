@@ -56,9 +56,10 @@ describe('ConsoleAppender', () => {
       name: 'deny',
       version: '1.0.0',
       kind: 'filter' as never,
+      enabled: true,
       init: () => {},
       dispose: () => {},
-      shouldLog: () => false,
+      filter: () => false,
     };
     a.init({ name: 'console' }, undefined, [deny]);
     a.write(event);

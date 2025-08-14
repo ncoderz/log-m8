@@ -26,13 +26,13 @@ Filters are plugins created and used by appenders during the logging process. Ea
 
 ## 3. Glossary
 
-- **Filter**: A plugin that implements `shouldLog(LogEvent): boolean` to gate log event emission
-- **Filter Evaluation**: The process of calling `shouldLog` on each filter in sequence
+- **Filter**: A plugin that implements `filter(LogEvent): boolean` to gate log event emission
+- **Filter Evaluation**: The process of calling `filter` on each filter in sequence
 - **Short-circuit**: Stopping evaluation when the first filter returns false
 
 ## 4. Core Features
 
-1. Simple boolean evaluation interface via `shouldLog` method
+1. Simple boolean evaluation interface via `filter` method
 2. Plugin-based architecture for custom implementations
 3. Integration with appender logging workflow
 
@@ -44,7 +44,7 @@ Filters are plugins created and used by appenders during the logging process. Ea
 
 ## 6. Functional Requirements
 
-- FR-FLTR-001: A Filter extends Plugin with methods: `init(FilterConfig)`, `shouldLog(LogEvent): boolean`, `dispose()`
+- FR-FLTR-001: A Filter extends Plugin with methods: `init(FilterConfig)`, `filter(LogEvent): boolean`, `dispose()`
 - FR-FLTR-002: Appenders evaluate filters in configuration order before logging; if any returns false, the event is not logged
 - FR-FLTR-003: Filters must be synchronous and return boolean values quickly
 - FR-FLTR-004: Filters must not mutate the LogEvent or its properties
@@ -105,12 +105,12 @@ structure ShouldLogInput {
 
 structure ShouldLogOutput {
     @required
-    shouldLog: Boolean
+    filter: Boolean
 }
 
 // Implementation notes:
 // - Filters are implemented as TypeScript/JavaScript classes extending Plugin
-// - shouldLog() is called synchronously by appenders during write()
+// - filter() is called synchronously by appenders during write()
 // - Filter instances are created per appender during initialization
 ```
 
@@ -126,7 +126,7 @@ None.
 ## 12. Acceptance Criteria
 
 - Filters can be implemented by extending the Plugin interface
-- Appenders call shouldLog() on each filter in sequence before logging
+- Appenders call filter() on each filter in sequence before logging
 - When any filter returns false, the event is not logged by that appender
 - Filters cannot modify the LogEvent being evaluated
 

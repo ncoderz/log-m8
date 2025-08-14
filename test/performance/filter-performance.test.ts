@@ -16,6 +16,8 @@ class PerformanceTestFilter implements Filter {
   version = '1.0.0';
   kind = PluginKind.filter;
 
+  enabled = true;
+
   init(_config: FilterConfig): void {
     // No initialization needed
   }
@@ -24,7 +26,7 @@ class PerformanceTestFilter implements Filter {
     // No cleanup needed
   }
 
-  shouldLog(_logEvent: LogEvent): boolean {
+  filter(_logEvent: LogEvent): boolean {
     // Simulate minimal processing time
     return true;
   }
@@ -37,6 +39,8 @@ class ComplexFilter implements Filter {
   name = 'complex';
   version = '1.0.0';
   kind = PluginKind.filter;
+
+  enabled = true;
   private allowedLevels: Set<string> = new Set();
 
   init(config: FilterConfig): void {
@@ -52,7 +56,7 @@ class ComplexFilter implements Filter {
     this.allowedLevels.clear();
   }
 
-  shouldLog(logEvent: LogEvent): boolean {
+  filter(logEvent: LogEvent): boolean {
     // More complex evaluation logic
     if (!this.allowedLevels.has(logEvent.level)) {
       return false;
@@ -331,10 +335,12 @@ describe('Filter Performance Tests', () => {
       version = '1.0.0';
       kind = PluginKind.filter;
 
+      enabled = true;
+
       init(_config: FilterConfig): void {}
       dispose(): void {}
 
-      shouldLog(_logEvent: LogEvent): boolean {
+      filter(_logEvent: LogEvent): boolean {
         return false; // Always deny
       }
     }

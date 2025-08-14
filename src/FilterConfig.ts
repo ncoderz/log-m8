@@ -5,5 +5,8 @@ import type { PluginConfig } from './PluginConfig.ts';
  * @extends PluginConfig
  */
 export interface FilterConfig extends PluginConfig {
-  // No additional properties
+  /**
+   * Whether the filter is enabled.
+   */
+  enabled?: boolean;
 }

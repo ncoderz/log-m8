@@ -90,4 +90,26 @@ export interface Appender extends Plugin {
    * LogM8.flushAppender(). Implementations should ensure data persistence.
    */
   flush(): void;
+
+  /**
+   * Disposes of the appender and releases any resources.
+   *
+   * Called during LogM8.dispose() to clean up the appender's resources.
+   * Implementations should ensure all buffered events are flushed before disposal.
+   */
+  dispose(): void;
+
+  /**
+   * Enables the specified filter for this appender.
+   *
+   * @param filterName - The name of the filter to enable
+   */
+  enableFilter(filterName: string): void;
+
+  /**
+   * Disables the specified filter for this appender.
+   *
+   * @param filterName - The name of the filter to disable
+   */
+  disableFilter(filterName: string): void;
 }

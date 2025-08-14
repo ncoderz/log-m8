@@ -18,4 +18,11 @@ export interface Formatter extends Plugin {
    * @returns An array of formatted output elements.
    */
   format(logEvent: LogEvent): unknown[];
+
+  /**
+   * Disposes of the formatter, cleaning up any resources.
+   *
+   * Called during parent's dispose() to clean up the formatter's resources.
+   */
+  dispose(): void;
 }

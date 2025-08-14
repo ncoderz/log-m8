@@ -12,9 +12,11 @@ class DenyAllFilter implements Filter {
   name = 'deny';
   version = '1.0.0';
   kind = PluginKind.filter;
+
+  enabled = true;
   init(): void {}
   dispose(): void {}
-  shouldLog(): boolean {
+  filter(): boolean {
     return false;
   }
 }
@@ -46,17 +48,34 @@ class SpyAppender implements Appender {
   write(e: { logger: string; level: string; message: unknown }): void {
     for (const f of this.filters) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (!f.shouldLog(e as any)) return;
+      if (!f.filter(e as any)) return;
     }
     this.writes.push(`${e.logger}:${e.level}:${e.message}`);
   }
   flush(): void {}
+
+  enableFilter(name: string): void {
+    const filter = this._getFilter(name);
+    if (!filter) return;
+    filter.enabled = true;
+  }
+
+  disableFilter(name: string): void {
+    const filter = this._getFilter(name);
+    if (!filter) return;
+    filter.enabled = false;
+  }
+
+  private _getFilter(name: string): Filter | undefined {
+    return this.filters.find((f) => f.name === name);
+  }
 }
 
 class SpyAppenderFactory implements PluginFactory {
   name = 'spy';
   version = '1.0.0';
   kind = PluginKind.appender;
+
   instances: SpyAppender[] = [];
 
   create(config: AppenderConfig): Appender {

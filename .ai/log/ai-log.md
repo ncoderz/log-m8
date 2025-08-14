@@ -112,7 +112,7 @@ Significantly reduced the filter specification complexity to align with the actu
 
 ### test/unit/filter.test.ts
 
-- `Test +` Comprehensive unit tests for Filter interface covering basic contract, shouldLog behavior, custom implementations, error handling, and performance
+- `Test +` Comprehensive unit tests for Filter interface covering basic contract, filter behavior, custom implementations, error handling, and performance
 - `Test +` Tests for level-based and logger name-based filtering patterns
 - `Test +` Configuration handling and validation tests
 - `Test +` Performance tests ensuring O(n) evaluation and minimal allocations

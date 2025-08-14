@@ -14,6 +14,7 @@ class AllowAllFilter implements Filter {
   name = 'allow-all';
   version = '1.0.0';
   kind = PluginKind.filter;
+  enabled = true;
 
   init(_config: FilterConfig): void {
     // No initialization needed for this test filter
@@ -23,7 +24,7 @@ class AllowAllFilter implements Filter {
     // No cleanup needed for this test filter
   }
 
-  shouldLog(_logEvent: LogEvent): boolean {
+  filter(_logEvent: LogEvent): boolean {
     return true;
   }
 }
@@ -35,6 +36,7 @@ class DenyAllFilter implements Filter {
   name = 'deny-all';
   version = '1.0.0';
   kind = PluginKind.filter;
+  enabled = true;
 
   init(_config: FilterConfig): void {
     // No initialization needed for this test filter
@@ -44,7 +46,7 @@ class DenyAllFilter implements Filter {
     // No cleanup needed for this test filter
   }
 
-  shouldLog(_logEvent: LogEvent): boolean {
+  filter(_logEvent: LogEvent): boolean {
     return false;
   }
 }
@@ -56,6 +58,8 @@ class LevelFilter implements Filter {
   name = 'level-filter';
   version = '1.0.0';
   kind = PluginKind.filter;
+
+  enabled = true;
   private minLevel: string = LogLevel.info;
 
   init(config: FilterConfig): void {
@@ -68,7 +72,7 @@ class LevelFilter implements Filter {
     // No cleanup needed for this test filter
   }
 
-  shouldLog(logEvent: LogEvent): boolean {
+  filter(logEvent: LogEvent): boolean {
     const levelOrder = [
       LogLevel.trace,
       LogLevel.track,
@@ -106,6 +110,7 @@ class LoggerNameFilter implements Filter {
   name = 'logger-name-filter';
   version = '1.0.0';
   kind = PluginKind.filter;
+  enabled = true;
   private allowedLoggers: string[] = [];
 
   init(config: FilterConfig): void {
@@ -118,7 +123,7 @@ class LoggerNameFilter implements Filter {
     // No cleanup needed for this test filter
   }
 
-  shouldLog(logEvent: LogEvent): boolean {
+  filter(logEvent: LogEvent): boolean {
     if (this.allowedLoggers.length === 0) {
       return true; // Allow all if no specific loggers configured
     }
@@ -148,7 +153,7 @@ describe('Filter Interface', () => {
       // Verify filter methods exist
       expect(typeof filter.init).toBe('function');
       expect(typeof filter.dispose).toBe('function');
-      expect(typeof filter.shouldLog).toBe('function');
+      expect(typeof filter.filter).toBe('function');
     });
 
     it('should allow initialization with FilterConfig', () => {
@@ -167,13 +172,13 @@ describe('Filter Interface', () => {
     });
   });
 
-  describe('shouldLog Method', () => {
+  describe('filter Method', () => {
     it('should return boolean value', () => {
       const allowFilter = new AllowAllFilter();
       const denyFilter = new DenyAllFilter();
 
-      const allowResult = allowFilter.shouldLog(sampleLogEvent);
-      const denyResult = denyFilter.shouldLog(sampleLogEvent);
+      const allowResult = allowFilter.filter(sampleLogEvent);
+      const denyResult = denyFilter.filter(sampleLogEvent);
 
       expect(typeof allowResult).toBe('boolean');
       expect(typeof denyResult).toBe('boolean');
@@ -184,7 +189,7 @@ describe('Filter Interface', () => {
     it('should be synchronous', () => {
       const filter = new AllowAllFilter();
       const start = Date.now();
-      const result = filter.shouldLog(sampleLogEvent);
+      const result = filter.filter(sampleLogEvent);
       const duration = Date.now() - start;
 
       // Should complete very quickly (within 1ms in most cases)
@@ -196,7 +201,7 @@ describe('Filter Interface', () => {
       const filter = new AllowAllFilter();
       const originalEvent = { ...sampleLogEvent };
 
-      filter.shouldLog(sampleLogEvent);
+      filter.filter(sampleLogEvent);
 
       // Verify the event wasn't modified
       expect(sampleLogEvent).toEqual(originalEvent);
@@ -215,9 +220,9 @@ describe('Filter Interface', () => {
       const warnEvent: LogEvent = { ...sampleLogEvent, level: LogLevel.warn };
       const errorEvent: LogEvent = { ...sampleLogEvent, level: LogLevel.error };
 
-      expect(filter.shouldLog(infoEvent)).toBe(false); // Below minimum
-      expect(filter.shouldLog(warnEvent)).toBe(true); // At minimum
-      expect(filter.shouldLog(errorEvent)).toBe(true); // Above minimum
+      expect(filter.filter(infoEvent)).toBe(false); // Below minimum
+      expect(filter.filter(warnEvent)).toBe(true); // At minimum
+      expect(filter.filter(errorEvent)).toBe(true); // Above minimum
     });
 
     it('should support logger name filtering', () => {
@@ -231,9 +236,9 @@ describe('Filter Interface', () => {
       const controllerEvent: LogEvent = { ...sampleLogEvent, logger: 'app.controller' };
       const otherEvent: LogEvent = { ...sampleLogEvent, logger: 'app.other' };
 
-      expect(filter.shouldLog(serviceEvent)).toBe(true);
-      expect(filter.shouldLog(controllerEvent)).toBe(true);
-      expect(filter.shouldLog(otherEvent)).toBe(false);
+      expect(filter.filter(serviceEvent)).toBe(true);
+      expect(filter.filter(controllerEvent)).toBe(true);
+      expect(filter.filter(otherEvent)).toBe(false);
     });
 
     it('should handle configuration options correctly', () => {
@@ -242,14 +247,14 @@ describe('Filter Interface', () => {
       // Test with default configuration
       filter.init({ name: 'test' });
       const infoEvent: LogEvent = { ...sampleLogEvent, level: LogLevel.info };
-      expect(filter.shouldLog(infoEvent)).toBe(true);
+      expect(filter.filter(infoEvent)).toBe(true);
 
       // Test with custom configuration
       filter.init({
         name: 'test',
         minLevel: LogLevel.error,
       });
-      expect(filter.shouldLog(infoEvent)).toBe(false);
+      expect(filter.filter(infoEvent)).toBe(false);
     });
   });
 
@@ -267,8 +272,8 @@ describe('Filter Interface', () => {
         timestamp: new Date(),
       } as LogEvent;
 
-      expect(() => filter.shouldLog(minimalEvent)).not.toThrow();
-      expect(filter.shouldLog(minimalEvent)).toBe(true);
+      expect(() => filter.filter(minimalEvent)).not.toThrow();
+      expect(filter.filter(minimalEvent)).toBe(true);
     });
 
     it('should handle missing configuration options gracefully', () => {
@@ -277,8 +282,8 @@ describe('Filter Interface', () => {
       // Initialize without options
       filter.init({ name: 'test' });
 
-      expect(() => filter.shouldLog(sampleLogEvent)).not.toThrow();
-      expect(filter.shouldLog(sampleLogEvent)).toBe(true); // Should allow all when no config
+      expect(() => filter.filter(sampleLogEvent)).not.toThrow();
+      expect(filter.filter(sampleLogEvent)).toBe(true); // Should allow all when no config
     });
   });
 
@@ -294,7 +299,7 @@ describe('Filter Interface', () => {
       const start = Date.now();
 
       for (const event of events) {
-        filter.shouldLog(event);
+        filter.filter(event);
       }
 
       const duration = Date.now() - start;
@@ -307,9 +312,9 @@ describe('Filter Interface', () => {
       const filter = new AllowAllFilter();
 
       // This is more of a design test - the filter shouldn't create
-      // new objects or arrays during shouldLog evaluation
-      const result1 = filter.shouldLog(sampleLogEvent);
-      const result2 = filter.shouldLog(sampleLogEvent);
+      // new objects or arrays during filter evaluation
+      const result1 = filter.filter(sampleLogEvent);
+      const result2 = filter.filter(sampleLogEvent);
 
       expect(result1).toBe(result2);
       expect(typeof result1).toBe('boolean');
