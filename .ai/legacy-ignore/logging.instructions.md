@@ -1,3 +1,7 @@
+---
+applyTo: "**"
+---
+
 # AI Logging Instructions
 
 As an AI, you will log your actions and decisions in a structured manner to ensure traceability and
@@ -16,8 +20,8 @@ Maintain a human-readable, append-only Markdown log in a file named `/.ai/log/ai
 <1–3 sentence high-level summary of WHAT changed and WHY. Present tense.>
 
 - **Affects:** `[code]` `[spec]` `[test]` `[doc]` `[other]` <!-- Keep only the tags that truly changed; order as shown -->
-- **Issue:** [#<number>](https://actual.link.to.issue.in.github)
-- **Pull Request:** [#<number>](https://actual.link.to.pull-request.in.github)
+- **Issue:** [#<number>](actual link to issue in github) <!-- Only if available -->
+- **Pull Request:** [#<number>](actual link to pull-request in github) <!-- Only if available -->
 
 #### <path/to/file_or_dir.ext>
 
@@ -61,8 +65,8 @@ Maintain a human-readable, append-only Markdown log in a file named `/.ai/log/ai
 Adds UI filter tabs (All / Active / Completed) and a bulk action to remove all completed todos. Preserves the selected filter in the URL hash (e.g. `#/active`).
 
 - **Affects:** `[code]` `[spec]` `[test]` `[doc]`
-- **Issue:** [#212](https://link.to.issue.in.github)
-- **Pull Request:** [#456](https://link.to.pull-request.in.github)
+- **Issue:** [#212](https://github.com/userX/todo-list/issues/212)
+- **Pull Request:** [#456](https://github.com/userX/todo-list/pull/456)
 
 #### src/components/TodoList.tsx
 
@@ -91,8 +95,8 @@ Adds UI filter tabs (All / Active / Completed) and a bulk action to remove all c
 Introduces optional `dueAt` on todos, supports quick entry like “tomorrow 5pm” or “next Monday”, and highlights overdue tasks. Timezone-aware using the app’s configured TZ.
 
 - **Affects:** `[code]` `[spec]` `[test]` `[doc]`
-- **Issue:** [#198](https://link.to.issue.in.github)
-- **Pull Request:** [#441](https://link.to.pull-request.in.github)
+- **Issue:** [#198](https://github.com/userX/todo-list/issues/198)
+- **Pull Request:** [#441](https://github.com/userX/todo-list/pull/441)
 
 #### src/models/Todo.ts
 

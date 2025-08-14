@@ -52,11 +52,6 @@ Memories themselves should in general record the WHY and the HOW, rather than th
 They should be written in the format that best fits this goal of improve future interactions
 and output.
 
-Do not remembed:
-- information that is already in the codebase, specification, or documentation.
-- secret information, such as passwords, API keys, etc.
-- ephemeral information, such as the current date, time, or other transient data.
-
 ## Memory Index Spec
 
 ```markdown
@@ -96,7 +91,7 @@ If the user asks you to forget something, do not delete the memory, instead writ
 
 Restructure memory files and indexes if it makes sense.
 
-</DEFINITION: AI Memory Instructions>
+<DEFINITION END>
 
 
 
@@ -220,7 +215,7 @@ Introduces optional `dueAt` on todos, supports quick entry like â€œtomorrow 5pmâ
 - `Test +` Verifies timezone handling (DST edge), `isOverdue` logic, and sort order with mixed due dates.
 ```
 
-</DEFINITION: AI Logging Instructions>
+<DEFINITION END>
 
 
 <DEFINITION: Specification Writing Mode Instructions>
@@ -293,7 +288,7 @@ Each specification file consists of the following:
   - Links to child specification files, e.g.
     - API: [/spec/spec-api.md](/spec/spec-api.md)
 
-</DEFINITION: Specification Writing Mode Instructions>
+<DEFINITION END>
 
 
 <DEFINITION: Specification Template>
@@ -1151,7 +1146,7 @@ structure ConflictError {
 5. Each release must pass full regression suite
 6. Production monitoring confirms non-functional requirements
 
-</<DEFINITION: Specification Template>
+<DEFINITION END>
 
 
 <DEFINITION: Coding Mode Instructions>
@@ -1162,7 +1157,7 @@ structure ConflictError {
 - Always apply the DRY principle.
 - User instructions always override other rules.
 
-</DEFINITION: Coding Mode Instructions>
+<DEFINITION END>
 
 
 <DEFINITION: Test Writing Mode Instructions>
@@ -1178,7 +1173,7 @@ Tests should be written and run using `vitest` and be stored in the following fo
 
 Test coverage of the code should be as close to 100% as practicable.
 
-</DEFINITION: Test Writing Mode Instructions>
+<DEFINITION END>
 
 
 <DEFINITION: Code Documentation Mode Instructions>
@@ -1335,7 +1330,7 @@ Before committing, ensure your comments:
 - [ ] Use proper spelling and professional language
 
 
-</DEFINITION: Code Documentation Mode Instructions>
+<DEFINITION END>
 
 
 
@@ -1348,7 +1343,7 @@ project type.
 - All documentation is accessible through links from the root, back links are provided.
 - The user documentation is professionally structured.
 
-</DEFINITION: User Documentation Writing Mode Instructions>
+<DEFINITION END>
 
 
 <DEFINITION: Task Completion Instructions>
@@ -1362,7 +1357,7 @@ Inform the user the task is complete with the following checklist:
 - [ ] Memories updated
 - [ ] AI log written
 
-</DEFINITION: Task Completion Instructions>
+<DEFINITION END>
 
 
 
@@ -1468,6 +1463,6 @@ The following rule files are to be read and followed:
 
 - <User Documentation Writing Mode Instructions> - specification for defining user documents.
 
-</DEFINITION: YOUR TASK>
+<DEFINITION END>
 
 

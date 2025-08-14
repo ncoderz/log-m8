@@ -1,5 +1,23 @@
 ## 2025-08-14
 
+### Record superenum library memory and set up memory indexes
+
+Create memory structure and add an entry for @ncoderz/superenum to improve future retrieval of dependency usage and implications.
+
+- **Affects:** `[doc]` `[other]`
+
+#### .ai/memory/index.md
+
+- `Doc +` Added root memory index with link to libraries sub-index.
+
+#### .ai/memory/index-libraries.md
+
+- `Doc +` Added libraries sub-index file.
+
+#### .ai/memory/memory-library-superenum.md
+
+- `Doc +` Added memory with version, usage locations, APIs, and notes for @ncoderz/superenum.
+
 ### Fix unsafe enum casting with proper Enum.fromValue validation
 
 Replaces unsafe enum casting patterns using `as [typeof array](number)` with safe validation using `Enum(LogLevel).fromValue()`. This prevents runtime errors from invalid enum values and ensures type safety throughout the codebase.
@@ -157,3 +175,21 @@ Corrects doc/api.md to reflect actual behavior: boolean level flags indicate ena
 - `Doc ~` Updated LoggingConfig.level and loggers types to LogLevelType
 - `Doc ~` Clarified AppenderConfig.priority describes higher values run first
 - `Doc ~` Updated LogLevel enum notes to place track between debug and trace and clarified emission rule and hierarchy
+
+### Record feature preferences for future enhancements
+
+Captured the maintainer’s prioritized enhancements to guide future proposals and implementations without over-complicating the system.
+
+- **Affects:** `[doc]` `[other]`
+
+#### .ai/memory/index.md
+
+- `Doc ~` Added link to feature preference sub-index.
+
+#### .ai/memory/index-feature-preferences.md
+
+- `Doc +` Created sub-index for feature preference memories.
+
+#### .ai/memory/memory-log-m8-feature-preferences.md
+
+- `Doc +` Added detailed memory of prioritized features (Redaction filter, Sampling filter, File rotation/retention) with WHY/HOW notes.

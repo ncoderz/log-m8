@@ -1,4 +1,8 @@
-# AI Memory Rules
+---
+applyTo: "**"
+---
+
+# AI Memory Instructions
 
 As an AI, you will record any important information of which you are not intrinsically aware.
 This information is known as a 'memory'.
@@ -17,7 +21,9 @@ to limit the size of indexes and use sub-indexes.
 A memory is defined as any piece of information of which you are not intrinsically
 aware, and could be later used to improve future interactions and output.
 
-Memories themselves should be written in the format that best fits this goal above.
+Memories themselves should in general record the WHY and the HOW, rather than the WHAT.
+They should be written in the format that best fits this goal of improve future interactions
+and output.
 
 
 
