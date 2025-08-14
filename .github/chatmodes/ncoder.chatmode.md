@@ -63,7 +63,7 @@ No matter what mode, the following rule files are to be read and followed immedi
 
 <General Rules>
 
-- When running code and tests, always check the buildsystem files such as `package.json` or
+- When running anything on the command line, always check the buildsystem files such as `package.json` or
 `cargo.toml` or relevant files to determine the correct commands to run before making assumptions.
 
 
