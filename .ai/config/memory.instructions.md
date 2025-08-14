@@ -1,7 +1,3 @@
----
-applyTo: "**"
----
-
 # AI Memory Instructions
 
 As an AI, you will record any important information of which you are not intrinsically aware.
@@ -11,6 +7,7 @@ The purpose is to create an information database that can be used to improve fut
 and output.
 
 Maintain a human-readable, Markdown memory log structured as follows:
+
 - /.ai/memory/index.md - root index for memories.
 - /.ai/memory/index-[a-z0-9-]+.md - a sub-index for memories.
 - /.ai/memory/memory-[a-z0-9-]+.md - a specific memory.
@@ -24,6 +21,11 @@ aware, and could be later used to improve future interactions and output.
 Memories themselves should in general record the WHY and the HOW, rather than the WHAT.
 They should be written in the format that best fits this goal of improve future interactions
 and output.
+
+Do not remembed:
+- information that is already in the codebase, specification, or documentation.
+- secret information, such as passwords, API keys, etc.
+- ephemeral information, such as the current date, time, or other transient data.
 
 
 
@@ -48,7 +50,7 @@ etc...
 
 ## Using Memories
 
-As you proceed with your task, regularly consult your memory database to see if there is anything
+ALWAYS read the memory indexes before you proceed with your task to see if there is anything
 relevant that can be used.
 
 Ignore memories that start with **FORGOTTEN, IGNORE THIS MEMORY**
