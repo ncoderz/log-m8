@@ -1,5 +1,30 @@
 ## 2025-08-15
 
+### Refactor filter specs: move MatchFilter details into dedicated spec and align formats
+
+Separated generic filter specification from built-in MatchFilter details. Created `spec/spec-filters-match.md` with full behavior and configuration, updated `spec/spec-filters.md` to focus on the Filter interface and runtime semantics, and added cross-references from root and plugin specs. Ensures consistency with other spec files' frontmatter and structure.
+
+- **Affects:** `[doc]` `[spec]`
+
+#### spec/spec-filters.md
+
+- `Spec ~` Removed MatchFilter-specific requirements and linked to dedicated spec.
+- `Spec ~` Fixed frontmatter block to match repository format.
+
+#### spec/spec-filters-match.md
+
+- `Spec +` Added a complete specification for MatchFilter including config, evaluation, path/equality semantics, and Smithy IDL.
+
+#### spec/spec.md
+
+- `Spec ~` Added reference link to the new MatchFilter spec.
+
+#### spec/spec-plugins.md
+
+- `Spec ~` Added reference link to the new MatchFilter spec.
+
+## 2025-08-15
+
 ### Add runtime filter enable/disable (global and per-appender) to specs and docs
 
 Document runtime toggling of filters, initial enabled flag in FilterConfig, and global filters in LoggingConfig. Update API and README to show usage and align with implemented code.

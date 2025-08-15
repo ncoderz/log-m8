@@ -163,3 +163,4 @@ None.
 - Built-in Appenders Specs: Console [/spec/spec-appenders-console.md](/spec/spec-appenders-console.md), File [/spec/spec-appenders-file.md](/spec/spec-appenders-file.md)
 - Default Formatter Spec: [/spec/spec-formatter-default.md](/spec/spec-formatter-default.md)
 - Filters Spec: [/spec/spec-filters.md](/spec/spec-filters.md)
+- MatchFilter Spec: [/spec/spec-filters-match.md](/spec/spec-filters-match.md)

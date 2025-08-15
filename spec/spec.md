@@ -495,6 +495,7 @@ This library provides no user interface.
 
 - Plugin System: [/spec/spec-plugins.md](/spec/spec-plugins.md)
 - Filters: [/spec/spec-filters.md](/spec/spec-filters.md)
+- Built-in Filter (MatchFilter): [/spec/spec-filters-match.md](/spec/spec-filters-match.md)
 - Built-in Appenders: Console [/spec/spec-appenders-console.md](/spec/spec-appenders-console.md), File [/spec/spec-appenders-file.md](/spec/spec-appenders-file.md)
 - Default Formatter: [/spec/spec-formatter-default.md](/spec/spec-formatter-default.md)
 - Project source types: `src/index.ts`, `src/LogM8.ts`, `src/Log.ts`, `src/LogEvent.ts`, `src/LoggingConfig.ts`, `src/appenders/*`, `src/formatters/*`
