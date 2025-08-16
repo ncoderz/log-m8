@@ -1,5 +1,3 @@
-import { Enum, type EnumType } from '@ncoderz/superenum';
-
 /**
  * Enumeration of plugin types supported by the LogM8 plugin system.
  *
@@ -26,15 +24,15 @@ import { Enum, type EnumType } from '@ncoderz/superenum';
  * }
  * ```
  */
-const PluginKind = Enum.fromArray([
-  'appender', // Log output destinations (console, file, network, etc.)
-  'filter', // Event filtering logic (level, content, rate limiting, etc.)
-  'formatter', // Event formatting (text, JSON, custom templates, etc.)
-] as const);
+const PluginKind = {
+  appender: 'appender', // Log output destinations (console, file, network, etc.)
+  filter: 'filter', // Event filtering logic (level, content, rate limiting, etc.)
+  formatter: 'formatter', // Event formatting (text, JSON, custom templates, etc.)
+} as const;
 
 /**
  * Type representing a PluginKind enum value.
  */
-export type PluginKindType = EnumType<typeof PluginKind>;
+export type PluginKindType = (typeof PluginKind)[keyof typeof PluginKind];
 
 export { PluginKind };

@@ -30,6 +30,7 @@ Pluggable, hierarchical logging for TypeScript/JavaScript. Clean APIs, sensible 
 - Runtime toggles for appenders and filters; appender priority
 - Works in Node.js and the browser (console only in browsers)
 - Performance-minded: O(1) fast-path for disabled logs, minimal allocations
+- Zero dependencies
 
 ## Quick Start
 
@@ -219,8 +220,7 @@ Logging.init(/* your config referencing the factory name */);
 
 ## Environment Compatibility
 
-- Node.js >= 18 supported (tested with Node 24)
-- Browser: console appender only; file appender is Node-only
+- Node.js >= 18 supported
 - TypeScript types included; ESM and CJS entry points available
 
 ## License

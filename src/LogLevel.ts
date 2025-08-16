@@ -1,5 +1,3 @@
-import { Enum, type EnumType } from '@ncoderz/superenum';
-
 /**
  * Enumeration of supported log severity levels in ascending order of verbosity.
  *
@@ -25,21 +23,21 @@ import { Enum, type EnumType } from '@ncoderz/superenum';
  * logger.info('Emitted');      // info <= info in hierarchy
  * ```
  */
-const LogLevel = Enum.fromArray([
-  'off', // No logging
+const LogLevel = {
+  off: 'off', // No logging
 
-  'fatal',
-  'error',
-  'warn',
-  'info',
-  'debug',
-  'track', // Special log level for analytics
-  'trace',
-] as const);
+  fatal: 'fatal',
+  error: 'error',
+  warn: 'warn',
+  info: 'info',
+  debug: 'debug',
+  track: 'track', // Special log level for analytics
+  trace: 'trace',
+} as const;
 
 /**
  * Type representing a LogLevel enum value.
  */
-export type LogLevelType = EnumType<typeof LogLevel>;
+export type LogLevelType = (typeof LogLevel)[keyof typeof LogLevel];
 
 export { LogLevel };

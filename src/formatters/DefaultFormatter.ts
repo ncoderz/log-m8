@@ -1,5 +1,3 @@
-import { Enum } from '@ncoderz/superenum';
-
 import type { Formatter } from '../Formatter.ts';
 import type { FormatterConfig } from '../FormatterConfig.ts';
 import type { LogEvent } from '../LogEvent.ts';
@@ -154,35 +152,30 @@ class DefaultFormatter implements Formatter {
     this._timestampFormat = this._config.timestampFormat ?? DEFAULT_TIMESTAMP_FORMAT;
 
     // Build level display map with padding and optional colorization
-    const maxLevelLength = Math.max(
-      ...Enum(LogLevel)
-        .values()
-        .map((l) => l.length),
-    );
+    const levelValues = Object.values(LogLevel);
+    const maxLevelLength = Math.max(...levelValues.map((l) => l.length));
 
-    this._levelMap = Enum(LogLevel)
-      .values()
-      .reduce(
-        (acc, level) => {
-          let levelStr = level.toUpperCase().padEnd(maxLevelLength, ' ');
-          if (this._colorEnabled) {
-            if (isBrowser) {
-              // Browser: return [text, cssStyle] array for console.log('%c...', style)
-              const css = this._levelCssColorMap[level] || '';
-              acc[level] = [`%c${levelStr}`, css];
-              return acc;
-            } else {
-              // Node.js: wrap with ANSI escape codes
-              const color = this._levelColorMap[level] || '';
-              const reset = '\x1b[0m';
-              levelStr = color + levelStr + reset;
-            }
+    this._levelMap = levelValues.reduce(
+      (acc, level) => {
+        let levelStr = level.toUpperCase().padEnd(maxLevelLength, ' ');
+        if (this._colorEnabled) {
+          if (isBrowser) {
+            // Browser: return [text, cssStyle] array for console.log('%c...', style)
+            const css = this._levelCssColorMap[level] || '';
+            acc[level] = [`%c${levelStr}`, css];
+            return acc;
+          } else {
+            // Node.js: wrap with ANSI escape codes
+            const color = this._levelColorMap[level] || '';
+            const reset = '\x1b[0m';
+            levelStr = color + levelStr + reset;
           }
-          acc[level] = levelStr;
-          return acc;
-        },
-        {} as Record<string, string | [string, string]>,
-      );
+        }
+        acc[level] = levelStr;
+        return acc;
+      },
+      {} as Record<string, string | [string, string]>,
+    );
   }
 
   public dispose(): void {}

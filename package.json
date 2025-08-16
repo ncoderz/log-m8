@@ -8,14 +8,14 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "browser": "./dist/browser/superenum.global.js",
-  "jsdelivr": "./dist/browser/superenum.global.js",
-  "unpkg": "./dist/browser/superenum.global.js",
+  "browser": "./dist/browser/log-m8.global.js",
+  "jsdelivr": "./dist/browser/log-m8.global.js",
+  "unpkg": "./dist/browser/log-m8.global.js",
   "exports": {
     "./browser": {
-      "browser": "./dist/browser/superenum.global.js",
-      "import": "./dist/browser/superenum.global.js",
-      "require": "./dist/browser/superenum.global.js"
+      "browser": "./dist/browser/log-m8.global.js",
+      "import": "./dist/browser/log-m8.global.js",
+      "require": "./dist/browser/log-m8.global.js"
     },
     ".": {
       "import": "./dist/index.js",
@@ -67,9 +67,7 @@
     "node": ">=18",
     "npm": ">=10"
   },
-  "dependencies": {
-    "@ncoderz/superenum": "^1.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "vitest": "^1.6.0",
     "@eslint/json": "^0.12.0",

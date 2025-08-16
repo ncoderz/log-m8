@@ -7,7 +7,7 @@ Appenders deliver formatted events to destinations. Built-in: `console` and `fil
 
 ## Console appender (`console`)
 
-- Maps levels to console methods with graceful fallbacks: fatal/error→error|log, warn→warn|log, info→info|log, debug→debug|log, trace→trace|log, track→log
+- Maps levels to console methods with graceful fallbacks: fatal/error→error|log, warn→warn|log, info→info|log, debug→debug|log, trace→debug|log (avoids stack traces), track→log
 - Works in Node and modern browsers
 - flush() is a no-op
 

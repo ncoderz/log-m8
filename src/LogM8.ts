@@ -1,5 +1,3 @@
-import { Enum } from '@ncoderz/superenum';
-
 import { ConsoleAppenderFactory } from './appenders/ConsoleAppender.ts';
 import { FileAppenderFactory } from './appenders/FileAppender.ts';
 import { MatchFilterFactory } from './filters/MatchFilter.ts';
@@ -69,7 +67,8 @@ class LogM8 {
   private _filters: Filter[] = [];
 
   private _defaultLevel: LogLevelType = LogLevel.info;
-  private _logLevelValues = Enum(LogLevel).values();
+  private _logLevelValues = Object.values(LogLevel);
+  private _logLevelSet = new Set<LogLevelType>(this._logLevelValues);
 
   // Buffer for log events before the system is initialized
   private _logBuffer: LogEvent[] = [];
@@ -116,12 +115,16 @@ class LogM8 {
     this._reset();
 
     // Set the default logging level
-    this._defaultLevel = Enum(LogLevel).fromValue(config.level) ?? LogLevel.info;
+    this._defaultLevel = this._logLevelSet.has(config.level as LogLevelType)
+      ? (config.level as LogLevelType)
+      : LogLevel.info;
 
     // Set up loggers
     for (const [name, level] of Object.entries(config.loggers ?? {})) {
       const logger = this.getLogger(name);
-      const l = Enum(LogLevel).fromValue(level) ?? this._defaultLevel;
+      const l = this._logLevelSet.has(level as LogLevelType)
+        ? (level as LogLevelType)
+        : this._defaultLevel;
       logger.setLevel(l);
     }
 

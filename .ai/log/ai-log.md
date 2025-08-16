@@ -1,5 +1,36 @@
 ## 2025-08-16
 
+### Stabilize performance variance across log levels and fix level map construction
+
+Avoid using console.trace for trace level to reduce stack-trace overhead, restore expected console payloads in ConsoleAppender without a formatter, and correct DefaultFormatter level map construction for reliability.
+
+- **Affects:** `[code]` `[doc]`
+
+#### src/appenders/ConsoleAppender.ts
+
+- `Code ~` Map trace level to console.debug/log instead of console.trace to avoid stack traces.
+- `Code ~` Retain original raw-event output when no formatter is set to satisfy integration tests.
+
+#### src/formatters/DefaultFormatter.ts
+
+- `Code ~` Build `_levelMap` using Array.reduce instead of iterator `.values().reduce(...)` for correctness.
+
+#### doc/appenders.md
+
+- `Doc ~` Document that trace maps to debug/log to avoid stack-trace overhead.
+
+## 2025-08-16
+
+### Add unit test for FileAppender with JsonFormatter
+
+Verify that FileAppender writes exactly one JSON line per event when paired with JsonFormatter, asserting core fields and newline termination.
+
+- **Affects:** `[test]`
+
+#### test/unit/fileAppender.test.ts
+
+- `Test +` Added test "writes a single JSON line when using JsonFormatter"; checks newline, single line, and parsed fields (timestamp, level, logger, message, data).
+
 ### Add user documentation: root README and detailed docs under /doc
 
 Create a high-quality user docs set based on the specs: a welcoming root README, and focused guides for configuration, appenders, formatters, filters, plus an API reference. All docs cross-link with backlinks as required.
@@ -142,6 +173,20 @@ Update documentation and specs to reflect that DefaultFormatter is text-only and
   - `Test` Tests or fixtures.
   - `Other` Anything that cannot fit the above tags.
 ## 2025-08-15
+
+### Remove superenum Enum() usage from tests after switching LogLevel to const object
+
+Replace references to Enum(LogLevel).fromValue() in tests with direct LogLevelType checks using Object.values(LogLevel). This aligns with the current LogLevel implementation (const object) and fixes build failures where Enum utility no longer exists.
+
+- **Affects:** `[test]`
+
+#### test/unit/filter.test.ts
+
+- `Test ~` Use LogLevelType and Object.values(LogLevel) validation in LevelFilter.init(); compare levels directly without Enum().
+
+#### test/usability/filter-usability.test.ts
+
+- `Test ~` Remove Enum() calls; validate provided level against LogLevel values and compare indices directly.
 
 ### Add child specifications for formatters, appenders, and filters; link from root spec
 

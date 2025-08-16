@@ -1,4 +1,3 @@
-import { Enum } from '@ncoderz/superenum';
 import { describe, expect, it } from 'vitest';
 
 import type { Filter } from '../../src/Filter.ts';
@@ -75,9 +74,8 @@ describe('Filter Usability Tests', () => {
 
       init(config: FilterConfig): void {
         const lvl = (config as Record<string, unknown>).level;
-        if (typeof lvl === 'string') {
-          const resolved = Enum(LogLevel).fromValue(lvl);
-          if (resolved) this.minLevel = resolved;
+        if (typeof lvl === 'string' && (Object.values(LogLevel) as string[]).includes(lvl)) {
+          this.minLevel = lvl as LogLevelType;
         }
       }
 
@@ -93,10 +91,8 @@ describe('Filter Usability Tests', () => {
           LogLevel.track,
           LogLevel.trace,
         ];
-        const validEventLevel = Enum(LogLevel).fromValue(logEvent.level) ?? LogLevel.trace;
-        const validMinLevel = Enum(LogLevel).fromValue(this.minLevel) ?? LogLevel.info;
-        const eventIndex = levels.indexOf(validEventLevel);
-        const minIndex = levels.indexOf(validMinLevel);
+        const eventIndex = levels.indexOf(logEvent.level);
+        const minIndex = levels.indexOf(this.minLevel);
         return eventIndex <= minIndex;
       }
     }

@@ -1,10 +1,9 @@
-import { Enum } from '@ncoderz/superenum';
 import { describe, expect, it } from 'vitest';
 
 import type { Filter } from '../../src/Filter.ts';
 import type { FilterConfig } from '../../src/FilterConfig.ts';
 import type { LogEvent } from '../../src/LogEvent.ts';
-import { LogLevel } from '../../src/LogLevel.ts';
+import { LogLevel, type LogLevelType } from '../../src/LogLevel.ts';
 import { PluginKind } from '../../src/PluginKind.ts';
 
 /**
@@ -60,11 +59,12 @@ class LevelFilter implements Filter {
   kind = PluginKind.filter;
 
   enabled = true;
-  private minLevel: string = LogLevel.info;
+  private minLevel: LogLevelType = LogLevel.info;
 
   init(config: FilterConfig): void {
-    if (config.minLevel) {
-      this.minLevel = config.minLevel as string;
+    const lvl = (config as Record<string, unknown>).minLevel;
+    if (typeof lvl === 'string' && (Object.values(LogLevel) as string[]).includes(lvl)) {
+      this.minLevel = lvl as LogLevelType;
     }
   }
 
@@ -88,16 +88,13 @@ class LevelFilter implements Filter {
       return false;
     }
 
-    const validEventLevel = Enum(LogLevel).fromValue(logEvent.level) ?? LogLevel.trace;
-    const validMinLevel = Enum(LogLevel).fromValue(this.minLevel) ?? LogLevel.info;
-
     // Filter out 'off' since it's handled separately above
-    if (validEventLevel === LogLevel.off || validMinLevel === LogLevel.off) {
+    if (this.minLevel === LogLevel.off) {
       return false;
     }
 
-    const eventLevelIndex = levelOrder.indexOf(validEventLevel as (typeof levelOrder)[number]);
-    const minLevelIndex = levelOrder.indexOf(validMinLevel as (typeof levelOrder)[number]);
+    const eventLevelIndex = levelOrder.indexOf(logEvent.level as (typeof levelOrder)[number]);
+    const minLevelIndex = levelOrder.indexOf(this.minLevel as (typeof levelOrder)[number]);
 
     return eventLevelIndex >= minLevelIndex;
   }

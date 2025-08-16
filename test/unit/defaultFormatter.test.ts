@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { DefaultFormatterFactory } from '../../src/formatters/DefaultFormatter.ts';
+import { JsonFormatterFactory } from '../../src/formatters/JsonFormatter.ts';
 import type { LogEvent } from '../../src/LogEvent.ts';
 import { LogLevel } from '../../src/LogLevel.ts';
 
@@ -23,8 +24,9 @@ describe('DefaultFormatter', () => {
     const tokens = f.format(ev);
     expect(Array.isArray(tokens)).toBe(true);
     expect(tokens.length >= 1).toBe(true);
-    // Contains message token in first string
-    expect(String(tokens[0])).toContain('hello');
+    // Default header on first line, message on second line
+    expect(String(tokens[0])).toMatch(/\d{2}:\d{2}:\d{2}\.\d{3} [A-Z]+\s+\[[\w.]+\]/);
+    expect(String(tokens[1])).toContain('hello');
     // Expanded data present
     const hasExpanded = tokens.some(
       (t) => typeof t === 'number' || (typeof t === 'string' && t.includes('requestId')),
@@ -33,11 +35,12 @@ describe('DefaultFormatter', () => {
   });
 
   it('json mode default emits single object with keys', () => {
-    const f = new DefaultFormatterFactory().create({ name: 'default', json: true });
+    // JSON output is handled by JsonFormatter, which returns a single JSON string
+    const f = new JsonFormatterFactory().create({ name: 'json' });
     const ev = makeEvent();
     const tokens = f.format(ev);
     expect(tokens.length).toBe(1);
-    const obj = tokens[0] as Record<string, unknown>;
+    const obj = JSON.parse(tokens[0] as string) as Record<string, unknown>;
     expect(obj.timestamp).toBeDefined();
     expect(obj.level).toBe('info');
     expect(obj.logger).toBe('app.core');

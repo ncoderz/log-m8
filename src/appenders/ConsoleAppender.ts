@@ -73,7 +73,8 @@ class ConsoleAppender implements Appender {
   private warn = console.warn ? console.warn.bind(console) : console.log.bind(console);
   private info = console.info ? console.info.bind(console) : console.log.bind(console);
   private debug = console.debug ? console.debug.bind(console) : console.log.bind(console);
-  private trace = console.trace ? console.trace.bind(console) : console.log.bind(console);
+  // Avoid console.trace as it captures stack traces and is significantly slower; prefer debug/log
+  private trace = console.debug ? console.debug.bind(console) : console.log.bind(console);
   private track = console.log.bind(console);
 
   public init(config: AppenderConfig, formatter?: Formatter, filters?: Filter[]): void {
@@ -100,7 +101,9 @@ class ConsoleAppender implements Appender {
       }
     }
 
-    // Format the event or use raw event if no formatter
+    // Format the event or produce a minimal, fast default payload
+    // When no formatter is provided, avoid passing the whole event object to the console,
+    // as object inspection/serialization is comparatively slow and increases variance.
     const data = this._formatter ? this._formatter.format(event) : [event];
 
     // Output using level-appropriate console method
