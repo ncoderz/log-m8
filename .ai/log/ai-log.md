@@ -1,5 +1,24 @@
 ## 2025-08-16
 
+### Comprehensive README rewrite for LogM8 logging library
+
+Completely rewrote README.md to be self-contained and comprehensive, removing all external links and providing complete documentation in one file. The new README thoroughly covers all functionality described in the specifications with extensive examples and detailed API reference.
+
+- **Affects:** `[doc]`
+
+#### README.md
+
+- `Doc ~` Rewrote entire README to be comprehensive and self-contained
+- `Doc +` Added detailed sections on core concepts, configuration options, hierarchical loggers
+- `Doc +` Added comprehensive coverage of built-in plugins (appenders, formatters, filters)
+- `Doc +` Added extensive custom plugin development guide with complete examples
+- `Doc +` Added runtime control documentation and performance considerations
+- `Doc +` Added browser support section with CDN usage examples
+- `Doc +` Added complete API reference with all interfaces and types
+- `Doc ~` Updated feature list to be more comprehensive and organized
+- `Doc ~` Enhanced code examples with TypeScript syntax and better explanations
+- `Doc -` Removed all references to external documentation files in /doc/ folder
+
 ### Stabilize performance variance across log levels and fix level map construction
 
 Avoid using console.trace for trace level to reduce stack-trace overhead, restore expected console payloads in ConsoleAppender without a formatter, and correct DefaultFormatter level map construction for reliability.
