@@ -1,9 +1,12 @@
 # log-m8
 
-A flexible, extensible logging system for TypeScript and JavaScript applications.
+![Build & Test](https://github.com/ncoderz/superenum/actions/workflows/build-test.yml/badge.svg?branch=main)
+![npm version](https://img.shields.io/npm/v/@ncoderz/log-m8)
+![License](https://img.shields.io/badge/license-BSD--2--Clause-blue)
 
-[![License](https://img.shields.io/badge/license-BSD--2--Clause-blue.svg)](LICENSE)
-[![npm version](https://img.shields.io/npm/v/log-m8.svg)](https://www.npmjs.com/package/log-m8)
+
+A fast, small, flexible and extensible logging system for TypeScript and JavaScript applications.
+
 
 ## Features
 
@@ -19,13 +22,13 @@ A flexible, extensible logging system for TypeScript and JavaScript applications
 ## Installation
 
 ```bash
-npm install log-m8
+npm install @ncoderz/log-m8
 ```
 
 ## Quick Start
 
 ```typescript
-import { LogM8 } from 'log-m8';
+import { LogM8 } from '@ncoderz/log-m8';
 
 // Configure the logging system
 LogM8.init();
@@ -160,6 +163,18 @@ Writes log events to a file, one line per event.
 
 Formatters transform log events into output formats suitable for different appenders.
 
+### Supported Formatter Tokens
+
+- `{timestamp}`: Formatted timestamp
+- `{LEVEL}`: Uppercase level label (with optional colorization)
+- `{level}`: Lowercase level name
+- `{logger}`: Logger name
+- `{message}`: Primary log message
+- `{data}`: Additional data arguments
+- `{context.*}`: Nested context properties
+
+All tokens support accessing nested items with `data[0].property` like notation.
+
 ### Built-in Formatters
 
 #### Default Formatter
@@ -170,7 +185,7 @@ A human-readable text formatter with customizable templates and optional coloriz
 {
   name: 'default-formatter',
   // Optional: custom format with token placeholders
-  format: '{timestamp} {LEVEL} [{logger}] {message} {data}',
+  format: ['{timestamp} {LEVEL} [{logger}]', '{message}', '{data}'],
   // Optional: timestamp format ('iso', 'locale', or custom pattern)
   timestampFormat: 'hh:mm:ss.SSS',
   // Optional: colorize level labels
@@ -178,14 +193,6 @@ A human-readable text formatter with customizable templates and optional coloriz
 }
 ```
 
-Supported tokens:
-- `{timestamp}`: Formatted timestamp
-- `{LEVEL}`: Uppercase level label (with optional colorization)
-- `{level}`: Lowercase level name
-- `{logger}`: Logger name
-- `{message}`: Primary log message
-- `{data}`: Additional data arguments
-- `{context.*}`: Nested context properties
 
 #### JSON Formatter
 
@@ -195,13 +202,19 @@ Formats log events as JSON objects, useful for machine processing and log aggreg
 {
   name: 'json-formatter',
   // Optional fields to include
-  fields: ['timestamp', 'level', 'logger', 'message', 'data', 'context']
+  format: ['timestamp', 'level', 'logger', 'message', 'data', 'context'],
+  // Pretty print
+  pretty: true
 }
 ```
 
 ## Filters
 
 Filters control which log events are processed by appenders.
+
+### Supported Filter Tokens
+
+See Supported Formatter Tokens.
 
 ### Built-in Filters
 
@@ -236,16 +249,22 @@ LogM8.disableAppender('console');
 // Enable file appender
 LogM8.enableAppender('file');
 
+// Flush all appenders
+LogM8.flushAppenders();
+
 // Disable a filter for a specific appender
 LogM8.disableFilter('sensitive-data', 'console');
 
-// Flush all appenders
-LogM8.flushAppenders();
+// Enable a filter for a specific appender
+LogM8.enableFilter('sensitive-data', 'console');
+
 ```
 
 ## Extending with Custom Plugins
 
-You can extend log-m8 with custom appenders, formatters, and filters:
+You can extend log-m8 with custom appenders, formatters, and filters.
+
+For example:
 
 ```typescript
 class SlackAppenderFactory implements PluginFactory {
