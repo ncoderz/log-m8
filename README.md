@@ -11,7 +11,8 @@ A lightweight, extensible logging library for TypeScript/JavaScript applications
 - [Hierarchical Loggers](#hierarchical-loggers)
 - [Log Levels](#log-levels)
 - [Built-in Appenders](#built-in-appenders)
-- [Default Formatter](#default-formatter)
+- [Default Formatter (Text)](#default-formatter-text)
+- [Json Formatter (Structured)](#json-formatter-structured)
 - [Match Filter](#match-filter)
 - [Filters Guide](#filters-guide)
 - [Runtime Control](#runtime-control)
@@ -26,7 +27,7 @@ A lightweight, extensible logging library for TypeScript/JavaScript applications
 - **Buffered Startup Logging**: Buffers up to 100 log events before initialization, then flushes them
 - **Plugin System**: Extensible appenders, formatters, and filters via factory pattern
 - **Built-in Appenders**: Console (Node.js/Browser) and File (Node.js) appenders included
-- **Flexible Formatting**: Default formatter with text/JSON modes, colors, and custom templates
+- **Flexible Formatting**: Default text formatter with colors and custom templates; dedicated JSON formatter
 - **Filtering**: Global and per-appender filters with allow/deny rules and runtime toggling
 - **Runtime Control**: Enable/disable appenders and filters; flush operations at runtime
 - **Minimal Dependencies**: Lightweight with a small dependency footprint
@@ -121,9 +122,10 @@ Logging.init({
       filename: 'app.log',
       append: true,
       formatter: {
-        name: 'default',
-        json: true, // JSON output for file
-        timestampFormat: 'iso',
+  name: 'json-formatter', // Structured JSON output for file
+  format: ['timestamp', 'level', 'logger', 'message', 'data'],
+  timestampFormat: 'iso',
+  pretty: 2,
       },
     },
   ],
@@ -206,9 +208,9 @@ Writes to files with configurable append/overwrite behavior:
 }
 ```
 
-## Default Formatter
+## Default Formatter (Text)
 
-The built-in formatter supports both text and JSON output modes with extensive customization:
+The built-in text formatter provides readable output with extensive customization:
 
 ### Text Mode (Default)
 
@@ -223,13 +225,19 @@ The built-in formatter supports both text and JSON output modes with extensive c
 // Output: 14:23:45.123 INFO  [app.auth] User authentication successful
 ```
 
-### JSON Mode
+## Json Formatter (Structured)
+
+Use the JSON formatter for structured logs with size guards (depth, string, and array limits):
 
 ```typescript
 {
-  name: 'default',
-  json: true,
-  format: ['{timestamp}', '{level}', '{logger}', '{message}', '{data}']
+  name: 'json-formatter',
+  format: ['timestamp', 'level', 'logger', 'message', 'data'],
+  timestampFormat: 'iso',
+  pretty: 2,
+  maxDepth: 3,
+  maxStringLen: 1000,
+  maxArrayLen: 100
 }
 
 // Output: {"timestamp":"2025-08-04T14:23:45.123Z","level":"info","logger":"app.auth","message":"User authenticated","data":{"userId":123}}

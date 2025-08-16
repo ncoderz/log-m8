@@ -1,4 +1,90 @@
+## 2025-08-16
+
+### Clarify formatter documentation to match actual behavior
+
+Updates JSDoc comments for DefaultFormatter and JsonFormatter to accurately describe configuration, token handling, colorization behavior, and output shapes. No runtime logic changes.
+
+- **Affects:** `[code]` `[doc]`
+
+#### src/formatters/DefaultFormatter.ts
+
+- `Comment ~` Corrected config docs (format default, timestampFormat, color behavior) and class description; added notes on {data} expansion and token resolution.
+
+#### src/formatters/JsonFormatter.ts
+
+- `Comment ~` Documented field selection via `format`, pretty printing, timestamp formatting, and max depth/length options; clarified LEVEL/timestamp special handling and fallback behavior.
+
+## TAGS (use exactly these labels; choose the right ones)
+
+- Tag format it `<Code|Comment|Spec|Doc|Test|Other> <+|-|~>`
+  - `+` Added
+  - `-` Removed
+  - `~` Modified
+  - `Code` Code, types, models, functions, or commands (non-doc).
+  - `Comment` Inline/API comments/JSDoc/docstrings in source files.
+  - `Spec` Specifications / requirements.
+  - `Doc` End-user or API documentation (non-spec).
+  - `Test` Tests or fixtures.
+  - `Other` Anything that cannot fit the above tags.
+## 2025-08-16
+
+### Split JSON formatting into dedicated JsonFormatter and update docs
+
+Update documentation and specs to reflect that DefaultFormatter is text-only and JSON output is handled by a new JsonFormatter. Adjust examples, config schemas, and README links. Add a dedicated spec for JsonFormatter and correct LogM8Utils stringify options in API docs.
+
+- **Affects:** `[doc]` `[spec]`
+
+#### doc/api.md
+
+- `Doc ~` Replace DefaultFormatter JSON mode with new JsonFormatter section and examples.
+- `Doc ~` Update FileAppender examples to use `json-formatter` and pretty/size options.
+- `Doc ~` Fix `StringifyLogOptions` fields to `maxStringLength` / `maxArrayLength`.
+
+#### README.md
+
+- `Doc ~` Update features to mention dedicated JSON formatter.
+- `Doc ~` Update advanced configuration to use `json-formatter`.
+- `Doc ~` Split formatter sections into Default (Text) and Json (Structured); fix TOC anchors.
+
+#### doc/code-documentation-summary.md
+
+- `Doc ~` Reflect DefaultFormatter as text-only and add JsonFormatter.
+
+#### spec/spec-formatter-default.md
+
+- `Spec ~` Remove JSON mode; clarify text-only behavior and configuration.
+
+#### spec/spec-formatter-json.md
+
+- `Spec +` New spec defining JsonFormatter configuration and behavior.
+
+#### spec/spec.md
+
+- `Spec ~` Update built-in plugin descriptions, requirements, and acceptance criteria to reference separate JSON formatter.
+
+## TAGS (use exactly these labels; choose the right ones)
+
+- Tag format it `<Code|Comment|Spec|Doc|Test|Other> <+|-|~>`
+  - `+` Added
+  - `-` Removed
+  - `~` Modified
+  - `Code` Code, types, models, functions, or commands (non-doc).
+  - `Comment` Inline/API comments/JSDoc/docstrings in source files.
+  - `Spec` Specifications / requirements.
+  - `Doc` End-user or API documentation (non-spec).
+  - `Test` Tests or fixtures.
+  - `Other` Anything that cannot fit the above tags.
 ## 2025-08-15
+
+### Document LogM8Utils.stringifyLog and serializeError in API docs
+
+Added user-facing API documentation for utility methods, including parameters, return types, examples, option interfaces, and behavior notes. Fixed markdown lint issue with bracket tokens.
+
+- **Affects:** `[doc]`
+
+#### doc/api.md
+
+- `Doc ~` Added `stringifyLog()` and `serializeError()` under Utilities > LogM8Utils with examples and notes.
 
 ### Refactor filter specs: move MatchFilter details into dedicated spec and align formats
 
@@ -53,6 +139,17 @@ Document runtime toggling of filters, initial enabled flag in FilterConfig, and 
 - `Doc ~` Noted runtime control of filters and added config/usage snippets for global filters and runtime toggles.
 
 ## 2025-08-14
+
+### Add JSDoc for stringifyLog and serializeError in LogM8Utils
+
+Documented logging-focused JSON stringification behavior and structured error serialization. Clarifies depth limiting, string truncation, BigInt/Date handling, Error toJSON precedence, and recursive cause support to improve maintainability and IDE hints.
+
+- **Affects:** `[comment]`
+
+#### src/LogM8Utils.ts
+
+- `Comment +` Added comprehensive JSDoc for `stringifyLog()` covering options, guards, and examples.
+- `Comment +` Added comprehensive JSDoc for `serializeError()` detailing fields, recursion, and caveats.
 
 
 ### Record superenum library memory and set up memory indexes

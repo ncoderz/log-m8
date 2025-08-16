@@ -47,14 +47,14 @@ function main() {
   const cause = new Error('Root cause error');
   err.cause = cause;
 
-  // log.trace('This is a trace message');
-  // log.track('This is a tracking message');
+  log.trace('This is a trace message');
+  log.track('This is a tracking message');
   log.debug('This is a debug message', data, { inline: 'data' });
-  // log.info('This is an info message');
+  log.info('This is an info message');
   log.info({ inline: 'data' });
-  // log.warn('This is a warning message');
-  // log.error('This is an error message', err);
-  // log.fatal('This is a fatal message');
+  log.warn('This is a warning message');
+  log.error('This is an error message', err);
+  log.fatal('This is a fatal message');
 }
 
 main();

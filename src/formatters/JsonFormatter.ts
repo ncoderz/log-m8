@@ -17,14 +17,32 @@ const DEFAULT_MAX_STRING_LEN = 1000;
 const DEFAULT_MAX_ARRAY_LEN = 100;
 
 /**
- * Configuration interface for the default formatter.
+ * Configuration for the JSON formatter.
  *
- * Extends base FormatterConfig with options for template customization,
- * output format selection, and visual styling.
+ * Extends the base FormatterConfig with options for selecting which fields to
+ * include, pretty printing, timestamp formatting, and output size limits.
  */
 export interface JsonFormatterConfig extends FormatterConfig {
+  /**
+   * Fields to include in the output object.
+   * Accepts a single field or an array of fields. Defaults to
+   * ['timestamp', 'level', 'logger', 'message', 'data'].
+   *
+   * Each entry is used as the object key and resolved via dot-path on the LogEvent.
+   * Special handling:
+   * - 'LEVEL' returns the raw level string (e.g., 'info').
+   * - 'timestamp' is formatted with `timestampFormat`.
+   *
+   * If the list is empty, the entire LogEvent object is used.
+   */
   format?: string | string[];
 
+  /**
+   * Pretty-print JSON output.
+   * - true: default indentation of 2 spaces.
+   * - number: use the provided number of spaces.
+   * - false/undefined: minified JSON with no extra whitespace.
+   */
   pretty?: boolean | number;
 
   /**
@@ -35,20 +53,56 @@ export interface JsonFormatterConfig extends FormatterConfig {
 
   /**
    * Maximum depth for nested objects in JSON output.
+   * Defaults to 3.
    */
   maxDepth?: number;
 
   /**
    * Maximum length for string values in JSON output.
+   * Strings longer than this may be truncated by `stringifyLog`. Defaults to 1000.
    */
   maxStringLen?: number;
 
   /**
    * Maximum length for array values in JSON output.
+   * Arrays longer than this may be truncated by `stringifyLog`. Defaults to 100.
    */
   maxArrayLen?: number;
 }
 
+/**
+ * JSON formatter that emits a single JSON string per log event.
+ *
+ * Features
+ * - Select fields via `format` (e.g., ['timestamp','level','logger','message','data']).
+ * - Formats timestamps using `timestampFormat` ('iso', 'locale', or custom pattern).
+ * - Pretty printing with fixed (2 spaces) or custom indentation.
+ * - Output size controls via `maxDepth`, `maxStringLen`, and `maxArrayLen` (passed to `LogM8Utils.stringifyLog`).
+ *
+ * Behavior
+ * - Returns an array with a single element: the JSON string representation of the selected fields.
+ * - Field resolution uses dot-path access on the LogEvent (e.g., 'context.userId').
+ * - Special tokens:
+ *   - 'timestamp': formatted per `timestampFormat`.
+ *   - 'LEVEL': raw level string (lowercase; no color or padding).
+ * - If `format` is empty, the entire LogEvent object is serialized.
+ *
+ * Examples
+ *
+ * // Default fields, minified JSON
+ * formatter.init({});
+ * // => ["{\"timestamp\":\"...\",\"level\":\"info\",\"logger\":\"app\",\"message\":\"...\",\"data\":[]}"]
+ *
+ * // Pretty printed output (2 spaces)
+ * formatter.init({ pretty: true });
+ *
+ * // Custom fields with a nested context property
+ * formatter.init({
+ *   format: ['timestamp', 'LEVEL', 'logger', 'context.userId', 'message'],
+ *   timestampFormat: 'hh:mm:ss.SSS',
+ *   pretty: 2,
+ * });
+ */
 class JsonFormatter implements Formatter {
   public name = NAME;
   public version = VERSION;
@@ -97,6 +151,7 @@ class JsonFormatter implements Formatter {
         }
       });
     } else {
+      // When no fields are specified, fall back to including the entire LogEvent object.
       outputObj = logEvent;
     }
 

@@ -14,7 +14,7 @@ Define the plugin architecture of Log-M8: plugin kinds (appender, formatter, fil
 ### Will do:
 - Describe plugin kinds, lifecycle, configuration, and factory registration
 - Specify PluginManager behaviors and error conditions
-- Specify built-in plugins: console appender, file appender, default formatter
+- Specify built-in plugins: console appender, file appender, default text formatter, JSON formatter
 
 ### Will not do:
 - Transport-specific or third-party appenders beyond console/file
@@ -37,7 +37,7 @@ Define the plugin architecture of Log-M8: plugin kinds (appender, formatter, fil
 1. Unique-name factory registration per plugin implementation
 2. Creation of plugins by kind and name/config
 3. Lifecycle management: init(config), dispose() — factories initialize created instances; Log-M8 may pass additional dependencies (formatter, filters) to appenders during init
-4. Built-in plugins: console appender, file appender, default formatter
+4. Built-in plugins: console appender, file appender, default text formatter, JSON formatter
 5. Appender priority ordering and filter chaining
 
 ## 5. User Stories
@@ -54,7 +54,7 @@ Define the plugin architecture of Log-M8: plugin kinds (appender, formatter, fil
 - FR-P-004: Appender.init receives AppenderConfig, optional Formatter, and zero or more Filters. Factories initialize created plugin instances with the provided config; Log-M8 then calls Appender.init again to inject the resolved formatter and filters.
 - FR-P-005: Appender.write must apply filters in order and skip on first false.
 - FR-P-006: Appender priority determines execution order (descending numeric; default 0). Higher priority executes earlier.
-- FR-P-007: Console appender uses console methods per level; file appender streams to file; default formatter supports text/JSON and tokenized templates.
+- FR-P-007: Console appender uses console methods per level; file appender streams to file; default formatter supports text with tokenized templates and optional colors; JSON formatter provides structured JSON output and size guards.
 - FR-P-008: Appenders declare supportedLevels; Log-M8 skips events whose level isn’t supported by a given appender.
 
 ## 7. Non-functional Requirements
@@ -112,7 +112,7 @@ structure AppenderConfig extends PluginConfig {
 structure FormatterConfig extends PluginConfig {}
 structure FilterConfig extends PluginConfig {}
 
-// Built-in: Default Formatter
+// Built-in: Default Formatter (text)
 structure DefaultFormatterConfig extends FormatterConfig {
     // String template or array of templates. Tokens: {timestamp}, {LEVEL}, {logger}, {message}, {data}, and nested fields via path.
     format: DefaultFormat
@@ -120,9 +120,24 @@ structure DefaultFormatterConfig extends FormatterConfig {
     timestampFormat: String
     // Enable colorized level output (ANSI in Node, CSS in browser)
     color: Boolean
-    // Output as a single JSON object (ignores literal text tokens)
-    json: Boolean
 }
+// Built-in: JSON Formatter
+structure JsonFormatterConfig extends FormatterConfig {
+    // Keys to include in output object; string or list
+    format: JsonFormat
+    // Timestamp format applied to the timestamp field
+    timestampFormat: String
+    // Pretty printing control; true => 2 spaces
+    pretty: Pretty
+    // Size guards passed to stringifyLog
+    maxDepth: Integer
+    maxStringLen: Integer
+    maxArrayLen: Integer
+}
+
+union JsonFormat { single: String, multiple: JsonTemplateList }
+list JsonTemplateList { member: String }
+union Pretty { enabled: Boolean, spaces: Integer }
 
 union DefaultFormat { single: String, multiple: DefaultTemplateList }
 list DefaultTemplateList { member: String }
@@ -159,7 +174,7 @@ None.
 
 - Root spec: [/spec/spec.md](/spec/spec.md)
 - Code: `src/Plugin.ts`, `src/PluginFactory.ts`, `src/PluginManager.ts`, `src/PluginKind.ts`
-- Built-ins: `src/appenders/ConsoleAppender.ts`, `src/appenders/FileAppender.ts`, `src/formatters/DefaultFormatter.ts`
+- Built-ins: `src/appenders/ConsoleAppender.ts`, `src/appenders/FileAppender.ts`, `src/formatters/DefaultFormatter.ts`, `src/formatters/JsonFormatter.ts`
 - Built-in Appenders Specs: Console [/spec/spec-appenders-console.md](/spec/spec-appenders-console.md), File [/spec/spec-appenders-file.md](/spec/spec-appenders-file.md)
 - Default Formatter Spec: [/spec/spec-formatter-default.md](/spec/spec-formatter-default.md)
 - Filters Spec: [/spec/spec-filters.md](/spec/spec-filters.md)

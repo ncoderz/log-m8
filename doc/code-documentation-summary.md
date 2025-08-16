@@ -27,13 +27,15 @@ All public interfaces and classes have been thoroughly documented with TypeDoc-s
 - **Appender Interface** - Output destination plugin contract with priority ordering
 - **ConsoleAppender** - Built-in console output with environment detection
 - **FileAppender** - Node.js file output with configurable behaviors
-- **DefaultFormatter** - Flexible text/JSON formatter with token templating
+- **DefaultFormatter** - Flexible text formatter with token templating and optional colors
+- **JsonFormatter** - Structured JSON formatter with depth/length limits
 - **PluginKind Enum** - Plugin categorization for factory registration
 
 #### Configuration
 - **LoggingConfig** - Primary system configuration with hierarchical overrides
 - **AppenderConfig** - Appender-specific configuration with formatter/filter options
-- **DefaultFormatterConfig** - Formatter configuration with extensive customization
+- **DefaultFormatterConfig** - Text formatter configuration with template, timestamp format, and color options
+- **JsonFormatterConfig** - JSON formatter configuration with fields, pretty, and size guards
 
 #### Utilities
 - **LogM8Utils** - Timestamp formatting and object traversal utilities

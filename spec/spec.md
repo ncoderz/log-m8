@@ -7,7 +7,7 @@ Last Updated: 2025-08-10
 
 ## 1. Purpose
 
-Log-M8 is a lightweight, extensible logging library for TypeScript/JavaScript applications. It provides hierarchical loggers, configurable log levels, buffered startup logging, and a plugin system for appenders, formatters, and filters. It ships with a console appender, file appender (Node.js), and a default formatter supporting colored/text and JSON output with rich timestamp formatting.
+Log-M8 is a lightweight, extensible logging library for TypeScript/JavaScript applications. It provides hierarchical loggers, configurable log levels, buffered startup logging, and a plugin system for appenders, formatters, and filters. It ships with a console appender, file appender (Node.js), a default text formatter with colors and rich timestamps, and a dedicated JSON formatter for structured output.
 
 ## 2. Scope & Context
 
@@ -54,8 +54,8 @@ Log-M8 is a lightweight, extensible logging library for TypeScript/JavaScript ap
 1. Initialization & teardown (init/dispose) with buffered pre-init logging
 2. Hierarchical loggers ("a.b.c") with per-logger level overrides
 3. Rich levels including track for analytics
-4. Plugin system with built-in console/file appenders and default formatter
-5. Formatter with template tokens, JSON mode, and timestamp formatting
+4. Plugin system with built-in console/file appenders and text/JSON formatters
+5. Text formatter with template tokens and timestamp formatting; separate JSON formatter
 6. Runtime control of appenders (enable/disable/flush; flush all)
 6a. Runtime control of filters (enable/disable globally or scoped to a specific appender)
 7. Deterministic appender execution order via priority
@@ -66,7 +66,7 @@ Log-M8 is a lightweight, extensible logging library for TypeScript/JavaScript ap
 1. As a developer, I can initialize logging with default and per-logger levels so I can control verbosity.
 2. As a developer, I can get hierarchical child loggers so I can organize logs by subsystem.
 3. As a developer, I can emit logs at fatal/error/warn/info/debug/track/trace levels.
-4. As a developer, I can configure console and file outputs and customize formats (text/JSON, colors, timestamps).
+4. As a developer, I can configure console and file outputs and customize formats (text, colors, timestamps) and structured JSON output via the JSON formatter.
 5. As a developer, I can add custom appenders/formatters/filters via plugin factories.
 6. As a developer, I can enable/disable and flush appenders at runtime for maintenance or troubleshooting.
 7. As a developer, logs emitted before init are buffered (up to 100) and flushed on init so I don’t lose early logs.
@@ -106,13 +106,13 @@ Log-M8 is a lightweight, extensible logging library for TypeScript/JavaScript ap
 ### 6.5 Built-in Plugins
 - FR-022: Console Appender (name: "console"): outputs to global console; supports all levels except off; no-op flush; enabled by default unless disabled in config.
 - FR-023: File Appender (name: "file"): writes lines to a given filename; supports append or overwrite; Node.js only.
-- FR-024: Default Formatter (name: "default"): supports text and JSON output, optional colorization (ANSI in Node, CSS in browser), and tokenized templates.
+- FR-024: Default Formatter (name: "default"): supports text output, optional colorization (ANSI in Node, CSS in browser), and tokenized templates.
+    - JSON output is provided by the Json Formatter (name: "json-formatter").
 
 ### 6.6 Formatting & Tokens
 - FR-025: Default text format default: "{timestamp} {LEVEL} [{logger}] {message}", then a second token line "{data}" expanded/removed based on presence.
-- FR-026: Default JSON format fields: ["{timestamp}", "{level}", "{logger}", "{message}", "{data}"] producing a single object.
-- FR-027: Timestamp format default is "hh:mm:ss.SSS" for text and "iso" for JSON; format strings support tokens: yyyy, yy, MM, dd, hh, h, mm, ss, SSS, SS, S, A, a, z, zz.
-- FR-028: Token resolution looks up fields on the Log Event via dot-paths; LEVEL renders uppercased level with optional colorization in text mode; timestamp uses the timestamp formatter.
+- FR-026: Timestamp format default is "hh:mm:ss.SSS"; format strings support tokens: yyyy, yy, MM, dd, hh, h, mm, ss, SSS, SS, S, A, a, z, zz.
+- FR-027: Token resolution looks up fields on the Log Event via dot-paths; LEVEL renders uppercased level with optional colorization; timestamp uses the timestamp formatter.
 
 ### 6.7 Filtering
 - FR-029: Filters shall be called in order for each event; if any filter returns false, the event is skipped.
@@ -486,7 +486,7 @@ This library provides no user interface.
 - Init/dispose cycles function without resource leaks (streams closed, plugins disposed)
 - getLogger returns stable instances and supports parent.child names
 - Level gating matches the specified order; enablement-based flags behave as documented
-- Default console and file appenders work with default formatter text and JSON modes
+- Default console and file appenders work with the default text formatter; JSON output works via the JSON formatter
 - Appender priority ordering is descending; enabling/disabling works at runtime
 - Buffering of pre-init logs caps at 100 and flushes correctly
 - Missing plugin factories throw at init; write/flush errors in appenders do not crash process

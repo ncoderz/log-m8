@@ -23,6 +23,7 @@ This document provides comprehensive API documentation for the log-m8 logging li
   - [ConsoleAppender](#consoleappender)
   - [FileAppender](#fileappender)
   - [DefaultFormatter](#defaultformatter)
+  - [JsonFormatter](#jsonformatter)
   - [MatchFilter](#matchfilter)
   - [Filters Guide](#filters-guide)
 - [Utilities](#utilities)
@@ -329,6 +330,38 @@ interface PluginFactory<TConfig = PluginConfig, TPlugin = Plugin> {
 }
 ```
 
+#### Factory names (built-ins)
+
+Use these exact factory names when referencing plugins in configuration (string or inline config with `name`).
+
+- Appenders:
+  - console → 'console'
+  - file → 'file'
+- Formatters:
+  - default (text) → 'default-formatter'
+  - json (structured) → 'json-formatter'
+- Filters:
+  - match filter → 'match-filter'
+
+Example:
+
+```typescript
+Logging.init({
+  appenders: [
+    {
+      name: 'console',
+      formatter: { name: 'default-formatter', color: true },
+      filters: ['match-filter']
+    },
+    {
+      name: 'file',
+      filename: 'app.log',
+      formatter: { name: 'json-formatter', format: ['timestamp','level','logger','message','data'] }
+    }
+  ]
+});
+```
+
 ### PluginKind Enum
 
 Enumeration of supported plugin types.
@@ -439,8 +472,10 @@ interface FileAppenderConfig extends AppenderConfig {
   filename: 'logs/application.log',
   append: true,
   formatter: {
-    name: 'default',
-    json: true,
+    name: 'json-formatter',
+    // Optional: customize fields and pretty printing
+    format: ['timestamp', 'level', 'logger', 'message', 'data'],
+    pretty: 2,
     timestampFormat: 'iso'
   }
 }
@@ -448,7 +483,7 @@ interface FileAppenderConfig extends AppenderConfig {
 
 ### DefaultFormatter
 
-Built-in formatter supporting text and JSON output with extensive customization.
+Built-in formatter for readable text output with tokenized templates and optional colors.
 
 #### Configuration
 
@@ -457,7 +492,6 @@ interface DefaultFormatterConfig extends FormatterConfig {
   format?: string | string[];     // Custom format template(s)
   timestampFormat?: string;       // Timestamp format pattern or preset
   color?: boolean;                // Enable colorized output
-  json?: boolean;                 // Switch to JSON output mode
 }
 ```
 
@@ -482,14 +516,34 @@ interface DefaultFormatterConfig extends FormatterConfig {
 }
 ```
 
-#### JSON Mode Example
+### JsonFormatter
+
+Structured JSON formatter for machine-readable logs with size guards.
+
+#### Configuration
+
+```typescript
+interface JsonFormatterConfig extends FormatterConfig {
+  format?: string | string[];       // Object keys to include (e.g., ['timestamp','level','logger','message','data'])
+  pretty?: boolean | number;        // Pretty-print JSON (true => 2 spaces, number => indent)
+  timestampFormat?: string;         // 'iso' | 'locale' | custom pattern for timestamp field
+  maxDepth?: number;                // Max nesting depth when stringifying
+  maxStringLen?: number;            // Truncate long strings to this length
+  maxArrayLen?: number;             // Truncate long arrays to this length
+}
+```
+
+#### Example
 
 ```typescript
 {
-  name: 'default',
-  json: true,
-  format: ['{timestamp}', '{level}', '{logger}', '{message}', '{data}'],
-  timestampFormat: 'iso'
+  name: 'json-formatter',
+  format: ['timestamp', 'level', 'logger', 'message', 'data'],
+  timestampFormat: 'iso',
+  pretty: 2,
+  maxDepth: 3,
+  maxStringLen: 1000,
+  maxArrayLen: 100
 }
 ```
 
@@ -624,6 +678,64 @@ Formats Date objects using preset formats or custom token patterns.
 const date = new Date('2025-08-04T14:23:45.123Z');
 LogM8Utils.formatTimestamp(date, 'yyyy-MM-dd hh:mm:ss'); // '2025-08-04 14:23:45'
 LogM8Utils.formatTimestamp(date, 'hh:mm:ss.SSS');        // '14:23:45.123'
+```
+
+##### `stringifyLog(value: unknown, options?: StringifyLogOptions, space?: number | string): string`
+
+JSON-safe stringifier tuned for log payloads. Caps traversal depth, truncates long strings, converts BigInt to string, normalizes Date to ISO, and serializes Error instances via `serializeError()`.
+
+**Parameters:**
+- `value` - Arbitrary value to stringify
+- `options` - Optional controls for output size
+  - `maxDepth` - Max nesting levels to descend (default: 3)
+  - `maxStringLength` - Max string length before truncation (default: 200)
+  - `maxArrayLength` - Max array length before truncation (default: 100)
+- `space` - Indentation passed to `JSON.stringify` for pretty output
+
+**Returns:** JSON string safe for logging
+
+**Example:**
+```typescript
+const s = LogM8Utils.stringifyLog({ big: 10n, when: new Date(), msg: 'x'.repeat(500) });
+// {"big":"10","when":"2025-08-04T14:23:45.123Z","msg":"xxxxx…"}
+```
+
+**Notes:**
+- Depth limiting is tracked per-object; deep/cyclic graphs get compacted once the cap is hit (`[Object]` / `[Array]`).
+- Respects objects' own `toJSON()` if present.
+
+```typescript
+interface StringifyLogOptions {
+  maxDepth?: number;
+  maxStringLength?: number;
+  maxArrayLength?: number;
+}
+```
+
+##### `serializeError(error: unknown): SerializedError | null`
+
+Serializes an `Error` (or Error-like) into a plain, JSON-safe object. Uses `error.toJSON()` when available; otherwise includes `name`, `message`, `stack`, recursively serializes `cause` (if present), and copies other own enumerable properties.
+
+**Returns:** Structured error data suitable for logging, or `null` for falsy input
+
+**Example:**
+```typescript
+try {
+  throw new Error('Boom');
+} catch (e) {
+  const payload = LogM8Utils.serializeError(e);
+  // { name: 'Error', message: 'Boom', stack: '...', ... }
+}
+```
+
+```typescript
+interface SerializedError {
+  name?: string;
+  message?: string;
+  stack?: string;
+  cause?: SerializedError | null;
+  [key: string]: unknown;
+}
 ```
 
 ### LogLevel Enum

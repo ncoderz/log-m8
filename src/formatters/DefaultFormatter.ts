@@ -16,16 +16,16 @@ const DEFAULT_FORMAT = ['{timestamp} {LEVEL} [{logger}]', '{message}', '{data}']
 const DEFAULT_TIMESTAMP_FORMAT = 'hh:mm:ss.SSS';
 
 /**
- * Configuration interface for the default formatter.
+ * Configuration for the default text formatter.
  *
- * Extends base FormatterConfig with options for template customization,
- * output format selection, and visual styling.
+ * Extends the base FormatterConfig with options for template customization,
+ * timestamp formatting, and optional colorization.
  */
 export interface DefaultFormatterConfig extends FormatterConfig {
   /**
    * Custom format template(s) using token syntax.
-   * Single string or array of template strings for multi-line output.
-   * Defaults to readable text format or JSON field list based on json flag.
+   * Provide a single template string or an array of template strings for multi-line output.
+   * Defaults to a readable text format: ['{timestamp} {LEVEL} [{logger}]', '{message}', '{data}'].
    */
   format?: string | string[];
 
@@ -36,58 +36,59 @@ export interface DefaultFormatterConfig extends FormatterConfig {
   timestampFormat?: string;
 
   /**
-   * Enable colorized output using ANSI codes (Node.js) or CSS styles (browser).
-   * Applies colors to log level indicators for improved readability.
+   * Enable colorized output for level tokens.
+   *
+   * - Node.js: Applies ANSI escape codes.
+   * - Browser: Returns a tuple ['%cLEVEL', css] when the level token is the only part
+   *   on a line; otherwise falls back to plain text when coerced into a string.
+   *
+   * Set to true to enable; environment detection is used only to decide ANSI vs CSS.
    */
   color?: boolean;
 }
 
 /**
- * Built-in formatter providing flexible text and JSON output with token-based templates.
+ * Built-in text formatter with token-based templates and optional colorized levels.
  *
- * Supports customizable format templates using token substitution, automatic environment
- * detection for color support, timestamp formatting, and dual-mode output (text/JSON).
- * The default choice for most logging scenarios with sensible defaults and extensive
- * customization options.
+ * Features
+ * - Customizable templates using curly-brace tokens mixed with literal text.
+ * - Timestamp formatting via presets or custom patterns.
+ * - Optional colorization of the {LEVEL} token (ANSI in Node.js, CSS tuple in browsers).
  *
- * Token syntax:
- * - {timestamp}: Formatted timestamp using timestampFormat setting
- * - {LEVEL}: Uppercase level name with optional colorization
- * - {level}: Lowercase level name
- * - {logger}: Logger name
- * - {message}: Primary log message
- * - {data}: Additional data arguments (expands to multiple items in text mode)
- * - {context.*}: Nested context properties (e.g., {context.userId})
+ * Notes
+ * - This formatter outputs text (not JSON). It returns an array of strings/values that
+ *   appenders can pass to console/file outputs.
+ * - The {data} token resolves to the `logEvent.data` array. If present as its own
+ *   line entry, items are expanded in-place; if the array is empty, the token is removed.
+ * - {message} is passed through as-is when it’s not a string (e.g., objects or errors).
+ * - Any other token (including nested paths like {context.userId}) is resolved using
+ *   dot-path access on the LogEvent.
  *
- * Color support:
- * - Node.js: ANSI escape codes for terminal colors
- * - Browser: CSS style strings for console.log formatting
- * - Automatic detection of environment capabilities
+ * Supported tokens
+ * - {timestamp}: Formatted with `timestampFormat`.
+ * - {LEVEL}: Uppercase level label (with optional colorization/padding).
+ * - {level}: Lowercase level name.
+ * - {logger}: Logger name.
+ * - {message}: Primary log message (string or non-string value).
+ * - {data}: Additional data arguments array.
+ * - {context.*}: Nested context properties.
  *
  * @example
- * ```typescript
- * // Text mode with colors (default)
+ * // Text with colors
  * formatter.init({
  *   format: '{timestamp} {LEVEL} [{logger}] {message}',
  *   timestampFormat: 'hh:mm:ss.SSS',
- *   color: true
+ *   color: true,
  * });
  *
- * // JSON mode for structured logging
- * formatter.init({
- *   json: true,
- *   format: ['{timestamp}', '{level}', '{logger}', '{message}', '{data}']
- * });
- *
- * // Multi-line text output
+ * // Multi-line text output with expanded data
  * formatter.init({
  *   format: [
  *     '{timestamp} {LEVEL} [{logger}] {message}',
  *     'Context: {context}',
- *     'Data: {data}'
- *   ]
+ *     'Data: {data}',
+ *   ],
  * });
- * ```
  */
 class DefaultFormatter implements Formatter {
   public name = NAME;
