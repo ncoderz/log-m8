@@ -67,7 +67,6 @@ Log-m8 provides multiple logging levels in ascending order of verbosity:
 | `track` | Analytics and user behavior tracking events |
 | `trace` | Most detailed execution information for fine-grained debugging |
 
-When a logger is set to a specific level, it emits events at that level and all levels above it in the list. For example, a logger set to `info` will emit `fatal`, `error`, `warn`, and `info` events, but not `debug`, `track`, or `trace` events.
 
 ### Hierarchical Loggers
 
@@ -76,7 +75,7 @@ Loggers are organized hierarchically using dot notation:
 ```typescript
 const appLogger = LogM8.getLogger('app');
 const dbLogger = LogM8.getLogger('app.database');
-const cacheLogger = LogM8.getLogger('app.cache');
+const cacheLogger = appLogger.getLogger('cache'); // 'app.cache'
 ```
 
 This allows you to configure logging granularly by component while maintaining a clean organizational structure.
