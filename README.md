@@ -1,9 +1,12 @@
 # log-m8
 
-A flexible, extensible logging system for TypeScript and JavaScript applications.
+![Build & Test](https://github.com/ncoderz/superenum/actions/workflows/build-test.yml/badge.svg?branch=main)
+![npm version](https://img.shields.io/npm/v/@ncoderz/log-m8)
+![License](https://img.shields.io/badge/license-BSD--2--Clause-blue)
 
-[![License](https://img.shields.io/badge/license-BSD--2--Clause-blue.svg)](LICENSE)
-[![npm version](https://img.shields.io/npm/v/log-m8.svg)](https://www.npmjs.com/package/@ncoderzlog-m8)
+
+A fast, small, flexible and extensible logging system for TypeScript and JavaScript applications.
+
 
 ## Features
 
@@ -19,13 +22,13 @@ A flexible, extensible logging system for TypeScript and JavaScript applications
 ## Installation
 
 ```bash
-npm install log-m8
+npm install @ncoderz/log-m8
 ```
 
 ## Quick Start
 
 ```typescript
-import { LogM8 } from 'log-m8';
+import { LogM8 } from '@ncoderz/log-m8';
 
 // Configure the logging system
 LogM8.init();
