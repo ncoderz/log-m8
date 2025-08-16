@@ -39,8 +39,8 @@ export interface DefaultFormatterConfig extends FormatterConfig {
    * Enable colorized output for level tokens.
    *
    * - Node.js: Applies ANSI escape codes.
-   * - Browser: Returns a tuple ['%cLEVEL', css] when the level token is the only part
-   *   on a line; otherwise falls back to plain text when coerced into a string.
+   * - Browser: Returns a tuple ['%cLEVEL', css] suitable for console.log('%c..', ..)
+   *   when {LEVEL} is resolved; appenders may pass tokens straight to console APIs.
    *
    * Set to true to enable; environment detection is used only to decide ANSI vs CSS.
    */
@@ -70,7 +70,7 @@ export interface DefaultFormatterConfig extends FormatterConfig {
  * - {level}: Lowercase level name.
  * - {logger}: Logger name.
  * - {message}: Primary log message (string or non-string value).
- * - {data}: Additional data arguments array.
+ * - {data}: Additional data arguments array (expanded inline when present alone in a line).
  * - {context.*}: Nested context properties.
  *
  * @example

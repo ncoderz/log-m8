@@ -1,9 +1,4 @@
----
-Title: Todo-List Application Specification
-Version: 1.0.0
-Date Created: 2025-08-10
-Last Updated: 2025-08-10
----
+# Todo-List Application Specification
 
 ## 1. Purpose
 

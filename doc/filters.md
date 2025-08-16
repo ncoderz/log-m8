@@ -1,153 +1,52 @@
-# Filters Guide
+# Filters (selection)
 
-Back to README: [../README.md](../README.md)
+Filters decide whether a Log Event should be processed. They can be global (run before all appenders) or local to a specific appender.
 
-This guide explains how filtering works in log-m8, including global vs appender-level filters, the `enabled` flag, and runtime toggling.
+- Contract: name, version, kind='filter', enabled:boolean, init(config), filter(event): boolean, dispose()
+- Deny beats allow when rules conflict
+- Errors during evaluation should not crash logging; conservative drop is acceptable
 
-- Overview
-- Global Filters vs Appender Filters
-- MatchFilter (allow/deny)
-- Initial Enabled State
-- Runtime Enable/Disable
-- Examples
-- References
+## Match filter (`match-filter`)
 
-At a glance:
+Declarative allow/deny based on dot-path matches into the event.
 
+- allow: AND semantics — every rule must match
+- deny: OR semantics — any match denies (takes precedence over allow)
+- Dot-paths: access nested fields: `context.userId`, `data[0].error.code`, etc.
+
+Config shape:
 ```ts
-// Start with one disabled filter, one enabled
-Logging.init({
-  filters: [
-    { name: 'match-filter', deny: { 'context.userId': 'blocked' } },
-    { name: 'sensitive-data', enabled: false }, // skipped until enabled
-  ],
-  appenders: [ { name: 'console', formatter: 'default' } ]
-});
-
-// Runtime toggles
-Logging.enableFilter('sensitive-data');        // globally
-Logging.disableFilter('match-filter', 'console'); // scoped to console appender
+{ name: 'match-filter', options: {
+  allow?: Record<string, unknown>,
+  deny?:  Record<string, unknown>
+}}
 ```
 
-## Overview
+Examples:
 
-Filters are plugins that decide whether a log event should be emitted. Each filter implements:
-
-- name, version, kind: 'filter'
-- enabled: boolean (runtime toggle)
-- init(config)
-- filter(event): boolean
-- dispose()
-
-Evaluation is short-circuited: the first filter that returns false blocks the event.
-Ordering:
-- Global filters (from `Logging.init({ filters })`) run before appender filters.
-- Disabled filters are skipped but ordering is preserved.
-
-## Global Filters vs Appender Filters
-
-- Global filters are configured in `Logging.init({ filters: [...] })`.
-- They run before any appender-level filters.
-- Appender filters are configured per appender in `AppenderConfig.filters`.
-- Disabled filters are skipped but left in place (preserve order semantics).
-
-## MatchFilter (allow/deny)
-
-The built-in `match-filter` supports simple declarative rules:
-
-- allow: ALL rules must match (AND) when provided and non-empty
-- deny: ANY rule matching blocks (OR); deny takes precedence over allow
-- Paths support dot or bracket notation (e.g., `context.userId`, `data[0].type`)
-- Deep equality for arrays/objects; Dates compare by time; NaN equals NaN
-
-Example:
-
+Allow only database debug logs:
 ```ts
-{
-  name: 'match-filter',
-  allow: { logger: 'app.service', 'data[0].kind': 'audit' },
-  deny:  { 'context.userId': 'blocked' },
-}
+{ name: 'match-filter', options: { allow: { 'logger': 'app.db', 'level': 'debug' } } }
 ```
 
-## Initial Enabled State
-
-All filters accept `enabled?: boolean` in their config:
-
-- Omitted -> defaults to true
-- When false, the filter is created but skipped during evaluation until enabled
-
+Drop anything with test environment in context:
 ```ts
-filters: [
-  { name: 'match-filter', deny: { 'context.userId': 'blocked' }, enabled: true },
-  { name: 'sensitive-data', enabled: false }, // start disabled
-]
+{ name: 'match-filter', options: { deny: { 'context.env': 'test' } } }
 ```
 
-## Runtime Enable/Disable
-
-Toggle filters without changing configuration:
-
+Match inside `data` array:
 ```ts
-// Globally
-Logging.disableFilter('sensitive-data');
-Logging.enableFilter('sensitive-data');
-
-// Scoped to a specific appender
-Logging.disableFilter('sensitive-data', 'console');
-Logging.enableFilter('sensitive-data', 'console');
+{ name: 'match-filter', options: { deny: { 'data[0].user.role': 'admin' } } }
 ```
 
-Notes:
-- Global toggles affect global filter instances only.
-- Scoped toggles affect only the named appender's filter instance.
-- Appenders also expose `enableFilter(name)` / `disableFilter(name)`; the manager delegates to these when scoping is provided.
+## Where filters run
 
-## Examples
+- Global filters: `filters` at the root of `LoggingConfig`. Run before any appender.
+- Per-appender filters: `filters` inside each `AppenderConfig`. Run before that appender writes.
 
-### Global and Appender Filters Together
+## Runtime control
 
-```ts
-Logging.init({
-  level: 'info',
-  filters: [ // global
-    { name: 'match-filter', deny: { 'context.userId': 'blocked' } },
-  ],
-  appenders: [
-    {
-      name: 'console',
-      formatter: { name: 'default', color: true },
-      filters: [
-        'sensitive-data',
-        { name: 'match-filter', allow: { logger: 'app.api' }, enabled: false },
-      ],
-    },
-  ],
-});
+- Enable/disable globally: `Logging.enableFilter(name)` / `Logging.disableFilter(name)`
+- Enable/disable for a specific appender: `Logging.enableFilter(name, 'console')`
 
-const api = Logging.getLogger('app.api');
-api.setContext({ userId: 'ok' });
-api.info('visible');
-
-Logging.disableFilter('sensitive-data', 'console'); // allow sensitive messages on console only
-api.info('message with token=***');
-```
-
-### Toggling for Troubleshooting
-
-```ts
-// Temporarily disable all filtering to diagnose issues
-Logging.disableFilter('match-filter');
-Logging.disableFilter('sensitive-data');
-
-// Re-enable after investigation
-Logging.enableFilter('match-filter');
-Logging.enableFilter('sensitive-data');
-```
-
-## References
-
-- README: ../README.md
-- API Reference: ./api.md
-- Specs: ../spec/spec-filters.md, ../spec/spec.md
- - Back to README: ../README.md
+Back to docs index: ./README.md | Project root: ../README.md | Spec: ../spec/spec-filters.md

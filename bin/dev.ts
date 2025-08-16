@@ -3,7 +3,7 @@ import { Logging, LogLevel } from '../src/index.ts';
 function main() {
   const logEarly = Logging.getLogger('before').getLogger('main').getLogger('init');
 
-  // logEarly.info('Initializing logging system...');
+  logEarly.info('Initializing logging system...');
 
   Logging.init({
     level: LogLevel.debug,

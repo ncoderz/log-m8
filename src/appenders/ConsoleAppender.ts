@@ -48,7 +48,7 @@ export interface ConsoleAppenderConfig extends AppenderConfig {
  * ```typescript
  * // Automatic registration - no manual setup needed
  * Logging.init({
- *   appenders: [{ name: 'console', formatter: 'default' }]
+ *   appenders: [{ name: 'console', formatter: 'default-formatter' }]
  * });
  * ```
  */

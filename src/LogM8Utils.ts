@@ -253,7 +253,7 @@ class LogM8Utils {
    * @param options.maxArrayLength - Maximum number of array elements to include before truncation (default: 100).
    *                                 Arrays exceeding this limit will be truncated with a message
    *                                 indicating the number of omitted items.
-   * @param options.maxStringLen - Maximum character length for strings before truncation (default: 200)
+   * @param options.maxStringLength - Maximum character length for strings before truncation (default: 200)
    * @param space - Indentation for pretty-printing. Can be a number (spaces) or string (e.g., '\t').
    *               Pass undefined for compact output (recommended for production logs).
    *
@@ -304,7 +304,7 @@ class LogM8Utils {
    * // Custom options for verbose debugging
    * const debugJson = LogM8Utils.stringifyLog(
    *   complexObject,
-   *   { maxDepth: 5, maxArrayLength: 500, maxStringLen: 1000 },
+   *   { maxDepth: 5, maxArrayLength: 500, maxStringLength: 1000 },
    *   2  // Pretty print with 2 spaces
    * );
    *
@@ -312,7 +312,7 @@ class LogM8Utils {
    * // Production logging with minimal output
    * const prodJson = LogM8Utils.stringifyLog(
    *   userEvent,
-   *   { maxDepth: 2, maxArrayLength: 20, maxStringLen: 100 }  // Aggressive truncation for high-volume logs
+   *   { maxDepth: 2, maxArrayLength: 20, maxStringLength: 100 }  // Aggressive truncation for high-volume logs
    * );
    *
    * @example

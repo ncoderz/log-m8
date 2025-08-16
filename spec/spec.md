@@ -1,167 +1,164 @@
 ---
-Title: Log-M8 Logging Library Specification
+Title: LogM8 Logging Library Specification
 Version: 1.0.0
-Date Created: 2025-08-10
-Last Updated: 2025-08-10
+Date Created: 2025-08-16
+Last Updated: 2025-08-16
 ---
+
+# LogM8 Logging Library
 
 ## 1. Purpose
 
-Log-M8 is a lightweight, extensible logging library for TypeScript/JavaScript applications. It provides hierarchical loggers, configurable log levels, buffered startup logging, and a plugin system for appenders, formatters, and filters. It ships with a console appender, file appender (Node.js), a default text formatter with colors and rich timestamps, and a dedicated JSON formatter for structured output.
+LogM8 is a pluggable, hierarchical logging library for TypeScript/JavaScript applications. It provides level-based logging APIs, a small core, and an extensible plugin architecture for appenders (destinations), formatters (rendering), and filters (selection). It targets both Node.js and browser environments with zero-config defaults and safe, predictable behavior under load.
 
 ## 2. Scope & Context
 
-### What the system will do:
-- Provide a global logging manager you can initialize, dispose, and query for named loggers
-- Support hierarchical loggers using dot-separated names
-- Support log levels: off, fatal, error, warn, info, debug, track, trace
-- Buffer log events emitted before initialization (up to 100), then flush them upon init
-- Dispatch log events to configured appenders in priority order
-- Allow enabling/disabling and flushing of appenders at runtime
-- Allow enabling/disabling of filters at runtime (globally and per-appender)
-- Allow custom plugins (appenders, formatters, filters) via a simple factory interface
-- Include built-in plugins: console appender, file appender (Node.js), default formatter
-- Provide timestamp formatting utilities and path-based property access for formatters
+### What the system will do
+- Provide hierarchical loggers with dot-separated names and per-logger levels.
+- Support log levels: off, fatal, error, warn, info, debug, track, trace (in verbosity order low→high).
+- Buffer pre-init logs and flush them once initialized.
+- Route events through optional global and appender-level filters.
+- Transform events via formatters to structured output tokens.
+- Deliver output to destinations via appenders (console, file, custom).
+- Allow runtime control to enable/disable appenders and filters and to flush.
+- Offer utilities for timestamp formatting and safe JSON stringification of complex objects and errors.
+- Support custom plugins via a typed factory system.
 
-### What the system will not do:
-- Provide network transport, remote log shipping, or rotation/retention management
-- Provide persistence beyond the file appender’s write stream
-- Provide asynchronous retry or backpressure management for appenders
-- Provide structured schema validation of plugin configs (beyond basic shape)
-- Provide redaction or PII detection out of the box
+### What the system will not do
+- Provide network transport appenders out-of-the-box (may be added via plugins).
+- Persist logs reliably across process crashes (file appender uses OS buffering; no journaling).
+- Perform PII redaction automatically (can be implemented via filters).
+- Provide a UI; it is a code library.
 
-### System Context:
-- Runs in Node.js and browser environments
-  - Console appender works in both (requires global console)
-  - File appender requires Node.js fs module
-- Integrates into application code as a library; no server or external service required
+### System context
+- Consumers: Node.js services/CLIs, browser apps, libraries.
+- Dependencies: @ncoderz/superenum; Node.js fs module for file appender.
+- Environment: Node >= 18 (supported, tested with Node 24); browser support for console output only.
 
 ## 3. Glossary
-
-- Logger: A named entity used to emit log events at various levels.
-- Log Level: Severity level controlling which events are emitted (off, fatal, error, warn, info, debug, track, trace).
-- Log Event: The structured representation of a single log entry (logger, level, message, data, context, timestamp).
-- Appender: Plugin that outputs formatted log events to a destination (console, file, etc.).
-- Formatter: Plugin that converts a Log Event into output tokens (strings/objects) for appenders.
-- Filter: Plugin that decides whether a Log Event should be logged.
-- Plugin: A component with name/version/kind and lifecycle methods (init/dispose).
-- Plugin Factory: A factory that creates plugins by name and kind.
-- Plugin Kind: One of appender, formatter, filter.
-- Logging Config: Initialization configuration defining default level, per-logger levels, and appenders.
+- Logger: A named logging interface (e.g., "app.db") with level and context.
+- Log Event: Structured data emitted by a logger: { logger, level, message, data[], context, timestamp }.
+- Level: One of off | fatal | error | warn | info | debug | track | trace.
+- Appender: Output destination plugin that writes events (e.g., console, file).
+- Formatter: Plugin that converts a Log Event to output tokens (strings/values).
+- Filter: Plugin that decides whether an event should be logged.
+- Plugin Factory: A factory that creates instances of a specific plugin kind.
+- Plugin Kind: One of appender | filter | formatter.
+- Tokens: Placeholders used by formatters to interpolate event data.
 
 ## 4. Core Features
-
-1. Initialization & teardown (init/dispose) with buffered pre-init logging
-2. Hierarchical loggers ("a.b.c") with per-logger level overrides
-3. Rich levels including track for analytics
-4. Plugin system with built-in console/file appenders and text/JSON formatters
-5. Text formatter with template tokens and timestamp formatting; separate JSON formatter
-6. Runtime control of appenders (enable/disable/flush; flush all)
-6a. Runtime control of filters (enable/disable globally or scoped to a specific appender)
-7. Deterministic appender execution order via priority
-8. Utilities for timestamp formatting and object path resolution
+1. Hierarchical loggers with per-logger level overrides and shared context.
+2. Pre-init buffering (up to a capped size) with FIFO flush post-init.
+3. Plugin architecture with built-in factories:
+   - Appenders: console, file
+   - Formatters: default-formatter (text), json-formatter (JSON)
+   - Filters: match-filter (allow/deny rules)
+4. Level-based O(1) gating for disabled logs.
+5. Runtime control to enable/disable appenders/filters and flush appenders.
+6. Flexible timestamp formatting (presets and tokens).
+7. Safe JSON stringification with depth/length limits and robust Error serialization.
 
 ## 5. User Stories
-
-1. As a developer, I can initialize logging with default and per-logger levels so I can control verbosity.
-2. As a developer, I can get hierarchical child loggers so I can organize logs by subsystem.
-3. As a developer, I can emit logs at fatal/error/warn/info/debug/track/trace levels.
-4. As a developer, I can configure console and file outputs and customize formats (text, colors, timestamps) and structured JSON output via the JSON formatter.
-5. As a developer, I can add custom appenders/formatters/filters via plugin factories.
-6. As a developer, I can enable/disable and flush appenders at runtime for maintenance or troubleshooting.
-7. As a developer, logs emitted before init are buffered (up to 100) and flushed on init so I don’t lose early logs.
+1. As an app developer, I can initialize logging with a configuration so that logs go to desired destinations with desired formatting.
+2. As a developer, I can get a logger by name and emit logs at different levels with structured data.
+3. As a developer, I can set per-logger levels and context and create child loggers using hierarchical names.
+4. As an operator, I can enable/disable an appender and enable/disable a filter (globally or per appender) at runtime.
+5. As a library author, I can register custom appender/formatter/filter factories to extend the system.
+6. As a developer, I can choose JSON or text output, control timestamps, and optionally colorize levels in console.
+7. As a developer, I can filter logs declaratively by matching event fields or context.
 
 ## 6. Functional Requirements
 
 ### 6.1 Initialization & Lifecycle
-- FR-001: The library shall expose a logging manager (singleton export) and a class to construct managers.
-- FR-002: init(config) shall set default level, per-logger levels, and configure appenders with optional formatter and filters.
-- FR-003: dispose() shall flush all appenders, clear loggers/appenders, dispose created plugins, clear factories, and disable further logging until re-init.
-- FR-004: Prior to init, up to 100 log events shall be buffered; upon first log after init, the buffer shall be flushed in FIFO order before the triggering event.
+- FR-001: System shall provide an initialization function that accepts a configuration object (LoggingConfig) and configures default level, per-logger levels, appenders, formatters, and filters.
+- FR-002: System shall buffer log events emitted before initialization and flush them in FIFO order on the first log processed after initialization completes.
+- FR-003: System shall provide a dispose function that flushes appenders, disposes all plugins, clears loggers, clears buffers, and deregisters plugin factories.
 
-### 6.2 Loggers & Levels
-- FR-005: getLogger(name|string[]) shall return a logger with name either the given string or dot-joined segments; repeated calls return the same instance.
-- FR-006: Logger methods fatal/error/warn/info/debug/track/trace(message, ...data) shall emit events at the respective level.
-- FR-007: Logger setLevel(level) shall set the logger’s level and computed internal index.
-- FR-008: Logger setContext(ctx) shall replace the logger’s context with the provided object.
-- FR-009: Logger getLogger(childName) shall return a child logger named parent.child.
-- FR-010: Log enablement rule: a log is emitted only if levelIndex <= logger.levelIndex where index order is [off, fatal, error, warn, info, debug, track, trace].
-- FR-011: Logger read-only flags (isFatal, isError, isWarn, isInfo, isDebug, isTrack, isTrace) indicate enablement for that severity level and higher severity levels (i.e., whether calling that log method would emit an event).
-- FR-011a: Logger read-only flag isEnabled indicates whether logging is active (false only when level is 'off').
+### 6.2 Logger Management
+- FR-010: System shall provide getLogger(name) supporting string or string[] names; array names are joined by '.' into hierarchical names.
+- FR-011: Logger shall expose methods: fatal, error, warn, info, debug, track, trace to emit events.
+- FR-012: Logger shall expose level-derived booleans: isEnabled, isFatal, isError, isWarn, isInfo, isDebug, isTrack, isTrace for fast feature tests.
+- FR-013: Logger shall provide setLevel(level) to update the logger's threshold.
+- FR-014: Logger shall provide setContext(context) to set the context object attached to emitted events.
+- FR-015: Logger shall provide getLogger(childName) to return a child logger named `${parent}.${child}`.
 
-### 6.3 Appenders
-- FR-012: Appenders shall declare supportedLevels; events outside this set are skipped.
-- FR-013: Appenders shall be initialized with AppenderConfig, optional Formatter, and zero or more Filters.
-- FR-014: The manager shall call appender.write(event) for each event that passes filters; errors during write shall be caught and logged to console.
-- FR-015: enableAppender(name) and disableAppender(name) shall toggle an appender’s enabled flag.
-- FR-016: flushAppender(name) and flushAppenders() shall call appender.flush() catching errors.
-- FR-017: Appenders shall be executed in order of descending priority (higher numbers first). If unspecified, priority is treated as 0.
+### 6.3 Event Emission & Structure
+- FR-020: A log event shall include: logger (string), level (LogLevel), message (string|unknown), data (unknown[]), context (object), timestamp (Date).
+- FR-021: When the logger level disables the given event level, the call shall be a no-op without allocations beyond argument evaluation.
 
-### 6.4 Plugins & Factories
-- FR-018: A PluginFactory shall be registered per plugin implementation; name must be unique.
-- FR-019: Creating a plugin by kind and name shall use the matching factory; if none is found, an error shall be thrown.
-- FR-020: During init, appender/formatter/filter instances shall be created via factories; plugin instances are tracked for later disposal.
-- FR-021: dispose() shall call dispose() on all created plugin instances and clear the tracking.
+### 6.4 Filtering
+- FR-030: The system shall support global filters applied before any appender processing; any filter returning false shall drop the event.
+- FR-031: Each appender shall support a local filter chain evaluated before writing; any filter returning false shall skip writing for that appender.
+- FR-032: A filter shall implement: name, version, kind='filter', enabled:boolean, init(config), filter(event):boolean, dispose().
+- FR-033: Built-in match-filter shall support allow (AND) and deny (OR) maps keyed by dot-paths into the Log Event (e.g., 'context.userId', 'data[0].x'). Deny takes precedence.
 
-### 6.5 Built-in Plugins
-- FR-022: Console Appender (name: "console"): outputs to global console; supports all levels except off; no-op flush; enabled by default unless disabled in config.
-- FR-023: File Appender (name: "file"): writes lines to a given filename; supports append or overwrite; Node.js only.
-- FR-024: Default Formatter (name: "default"): supports text output, optional colorization (ANSI in Node, CSS in browser), and tokenized templates.
-    - JSON output is provided by the Json Formatter (name: "json-formatter").
+### 6.5 Formatting
+- FR-040: A formatter shall implement: name, version, kind='formatter', init(config), format(event):unknown[], dispose().
+- FR-041: Default text formatter must support string template(s) containing tokens such as {timestamp}, {LEVEL}, {level}, {logger}, {message}, {data}, and dot-paths (e.g., {context.userId}).
+- FR-042: Default text formatter must support multi-line templates (array of template lines); when a line resolves to the {data} array alone, items shall be expanded in-place; if empty, the token shall be removed.
+- FR-043: Default text formatter must support timestamp presets 'iso' | 'locale' and custom tokens: yyyy, yy, MM, dd, hh, h, mm, ss, SSS, SS, S, A, a, z, zz.
+- FR-044: Default text formatter must optionally colorize the {LEVEL} token: ANSI sequences in Node.js; CSS styling for browsers; non-color mode outputs plain text.
+- FR-045: JSON formatter must output one JSON string per event with configurable fields selection and pretty-print option; timestamp fields must be formatted per the timestampFormat.
 
-### 6.6 Formatting & Tokens
-- FR-025: Default text format default: "{timestamp} {LEVEL} [{logger}] {message}", then a second token line "{data}" expanded/removed based on presence.
-- FR-026: Timestamp format default is "hh:mm:ss.SSS"; format strings support tokens: yyyy, yy, MM, dd, hh, h, mm, ss, SSS, SS, S, A, a, z, zz.
-- FR-027: Token resolution looks up fields on the Log Event via dot-paths; LEVEL renders uppercased level with optional colorization; timestamp uses the timestamp formatter.
+### 6.6 Appenders
+- FR-050: An appender shall implement: name, version, kind='appender', supportedLevels:Set<LogLevel>, enabled:boolean, priority?:number, init(config, formatter?, filters?), write(event), flush(), dispose(), enableFilter(name), disableFilter(name).
+- FR-051: Console appender shall map levels to console methods (error, warn, info, debug, trace, log) with graceful fallbacks; flush is a no-op.
+- FR-052: File appender (Node-only) shall open a WriteStream with append or truncate behavior per config; write shall join formatted tokens with spaces plus a newline; flush is a no-op, dispose ends the stream.
+- FR-053: Appenders shall skip events whose level is not in supportedLevels or when disabled.
+- FR-054: Appenders shall evaluate local filters in order, skipping write on first denial.
 
-### 6.7 Filtering
-- FR-029: Filters shall be called in order for each event; if any filter returns false, the event is skipped.
-- FR-030: Missing filters or formatter are optional; events shall be passed as a single LogEvent object when no formatter is provided.
-- FR-031: Filters shall expose a runtime-enabled flag; when disabled, the filter is skipped during evaluation without removal.
-- FR-032: The manager shall support enableFilter(name) and disableFilter(name) to toggle global filters; when provided with an appender name, the toggle applies only to that appender’s local filter instance.
-- FR-033: Appenders shall expose enableFilter(name) and disableFilter(name) to toggle their configured filters.
-- FR-034: LoggingConfig may specify global filters evaluated prior to appender processing; appender-level filters apply after global filters.
-- FR-035: FilterConfig shall include an optional enabled flag controlling initial enabled state (default: true).
+### 6.7 Configuration
+- FR-060: LoggingConfig shall support: level (default: 'info'), loggers map for per-logger overrides, appenders list, and global filters list.
+- FR-061: AppenderConfig shall support: name, enabled?, priority?, formatter (by name or config), filters (by names or config objects).
+- FR-062: FilterConfig and FormatterConfig shall include at least a name and enabled? (filters) and may include plugin-specific options.
+- FR-063: When a configured plugin factory is not registered, initialization shall fail with a descriptive error.
+
+### 6.8 Plugin System
+- FR-070: System shall provide registerPluginFactory(factory) to register custom factories before init(). Registration of a duplicate name shall throw an error.
+- FR-071: System shall provide a plugin manager capable of creating plugin instances by kind and config/name; it shall track and dispose created plugins.
+
+### 6.9 Utilities
+- FR-080: System shall provide getPropertyByPath(object, path) to resolve nested values and bracketed array indices safely.
+- FR-081: System shall provide formatTimestamp(date, pattern) supporting the tokens listed in FR-043 and presets 'iso' and 'locale'.
+- FR-082: System shall provide stringifyLog(value, options) with depth, string length, and array length controls; it shall serialize Errors to structured JSON-safe objects including optional cause chains.
 
 ## 7. Non-functional Requirements
 
 ### 7.1 Usability
-- NFR-001: Zero-config startup shall produce visible console logs with sensible defaults.
-- NFR-002: Library API shall be discoverable via TypeScript types.
+- NFR-001: API shall be straightforward for typical logging use-cases with sensible defaults (console + default-formatter at 'info').
+- NFR-002: Colorized level output shall degrade gracefully when ANSI/CSS is unavailable.
 
 ### 7.2 Compatibility
-- NFR-003: Support Node.js (file + console) and modern browsers (console).
-- NFR-004: File appender requires Node.js fs module and a writeable filesystem path.
+- NFR-010: Node.js >= 18 is supported; file appender is Node-only; console appender works in both Node and modern browsers.
+- NFR-011: Type definitions must be available for TypeScript consumers.
 
 ### 7.3 Performance & Capacity
-- NFR-005: Logging call overhead for disabled levels should be O(1) with minimal allocations.
-- NFR-006: Buffer capacity prior to init is capped at 100 events; oldest dropped when full.
-- NFR-007: Appender invocation is synchronous and sequential in priority order.
+- NFR-020: Disabled log calls shall short-circuit in O(1) using precomputed level thresholds.
+- NFR-021: Logging path shall avoid unnecessary allocations and deep cloning; formatters may allocate per output needs.
+- NFR-022: Pre-init buffer size shall be capped to prevent unbounded memory growth.
 
 ### 7.4 Reliability & Availability
-- NFR-008: Failures in a single appender should not prevent other appenders from running for the same event.
-- NFR-009: dispose() shall make a best effort to flush/close resources (e.g., file streams).
+- NFR-030: Errors thrown by appenders shall not crash the application; they shall be caught and logged to console, and processing shall continue for other appenders.
+- NFR-031: File appender shall rely on OS/file system buffering; flush/dispose must be callable to help ensure durability on shutdown.
 
 ### 7.5 Security & Privacy
-- NFR-010: Library shall not exfiltrate data; all outputs are local (console/file) unless custom appenders are added by users.
-- NFR-011: Sensitive data handling/redaction is the responsibility of application code or custom filters/formatters.
+- NFR-040: Library shall not attempt to redact sensitive data by default; consumers can add filters to remove/redact fields.
+- NFR-041: stringifyLog shall avoid throwing and shall truncate excessively large structures to prevent log injection via extremely large payloads.
 
 ### 7.6 Compliance
-- NFR-012: No special compliance requirements; usage in regulated contexts must add appropriate filters/redaction.
+- NFR-050: No compliance guarantees are provided by the library; consumers are responsible for meeting GDPR/PII requirements via filters and data handling.
 
 ## 8. Constraints & Assumptions
 
 ### 8.1 Constraints
-- C-001: Appender priority execution order is descending (higher numbers first). This is the implemented behavior.
-- C-002: Logger boolean flags (isFatal, etc.) indicate enablement for that severity level and higher severity levels; when true, calling that log method will emit an event.
-- C-003: If a requested plugin factory (by name/kind) is not found during init, initialization throws.
-- C-004: Console availability is required for console appender; file appender requires fs availability.
-- C-005: Disabled filters must not affect evaluation order and are treated as no-ops.
+- C-001: Pre-init buffer maximum size: 100 events (FIFO; oldest dropped when full).
+- C-002: Plugin factory names must be globally unique; registering a duplicate shall error.
+- C-003: Supported levels are fixed as enumerated in this spec.
+- C-004: File appender requires a writable filesystem path and appropriate process permissions.
 
 ### 8.2 Assumptions
-- A-001: Applications will call init() early in startup; pre-init buffer protects against early logs but should be kept small.
-- A-002: Applications may register additional plugin factories before calling init().
-- A-003: Logger boolean flags (isFatal, etc.) indicate enablement for that severity level and higher severity levels; when true, calling that log method will emit an event.
+- A-001: Consumers will not rely on synchronous durability guarantees for file writes unless explicitly flushing/disposing.
+- A-002: Consumers may run in browser environments where only console output is applicable.
 
 ## 9. API (Smithy IDL)
 
@@ -170,333 +167,241 @@ $version: "2"
 
 namespace com.ncoderz.logm8
 
-// Library API modeled as an abstract service to describe code-level interactions.
-// No network protocol implied.
-
-// ===== Enums =====
-
-enum LogLevel {
-    OFF = "off"
-    FATAL = "fatal"
-    ERROR = "error"
-    WARN = "warn"
-    INFO = "info"
-    DEBUG = "debug"
-    TRACK = "track"
-    TRACE = "trace"
-}
-
-enum PluginKind {
-    APPENDER = "appender"
-    FILTER = "filter"
-    FORMATTER = "formatter"
-}
-
-// ===== Structures =====
-
-structure LogContext {
-    // Arbitrary key-values supported via document map
-    entries: ContextMap
-    userId: String
-    requestId: String
-    correlationId: String
-}
-
-map ContextMap {
-    key: String
-    value: Document
-}
-
-structure LogEvent {
-    @required
-    logger: String
-
-    @required
-    level: LogLevel
-
-    @required
-    // Message string or any serializable object
-    message: Document
-
-    // Additional variadic data items
-    data: DataList
-
-    @required
-    context: LogContext
-
-    @required
-    timestamp: Timestamp
-}
-
-list DataList {
-    member: Document
-}
-
-// Base config for any plugin
-structure PluginConfig {
-    @required
-    name: String
-
-    // Additional plugin-specific options
-    options: Document
-}
-
-// Formatter config
-structure FormatterConfig extends PluginConfig {}
-
-// Filter config
-structure FilterConfig extends PluginConfig {
-    // Initial enabled state; defaults to true when omitted
-    enabled: Boolean
-}
-
-// Appender config
-structure AppenderConfig extends PluginConfig {
-    enabled: Boolean
-    priority: Integer
-    // Formatter can be referred to by name or inline config
-    formatterName: String
-    formatterConfig: FormatterConfig
-    // Filters by name or inline configs (evaluated after global filters)
-    filters: FilterRefList
-}
-
-// Filter reference by name or inline configuration
-union FilterRef { name: String, config: FilterConfig }
-list FilterRefList { member: FilterRef }
-
-structure LoggingConfig {
-    level: LogLevel
-    // Per-logger level overrides (by name)
-    loggerLevels: LoggerLevelMap
-    // Appender configs
-    appenders: AppenderConfigList
-    // Global filters evaluated before appenders
-    filters: FilterRefList
-}
-
-map LoggerLevelMap {
-    key: String
-    value: LogLevel
-}
-
-list AppenderConfigList { member: AppenderConfig }
-
-// Default formatter configuration
-structure DefaultFormatterConfig extends FormatterConfig {
-    // Either a single template string or multiple segments
-    // e.g., "{timestamp} {LEVEL} [{logger}] {message}"
-    format: FormatTemplates
-    // Timestamp formatting: "iso", "locale", or tokenized pattern (yyyy, yy, MM, dd, hh, h, mm, ss, SSS, SS, S, A, a, z, zz)
-    timestampFormat: String
-    // Enable color (ANSI on Node, CSS on browser)
-    color: Boolean
-    // JSON mode outputs a single object instead of text tokens
-    json: Boolean
-}
-
-// For convenience in modeling a union of string | string[]
-list TemplateList { member: String }
-union FormatTemplates {
-    single: String
-    multiple: TemplateList
-}
-
-// File appender configuration
-structure FileAppenderConfig extends AppenderConfig {
-    @required
-    filename: String
-    append: Boolean
-}
-
-// ===== Service and Operations =====
-
-@title("Log-M8 Library")
-service LogM8Library {
+/// Code API for an in-process logging library. Not an HTTP service.
+/// Operations represent library entry points and logger methods.
+service LogM8Service {
     version: "1.0.0"
     operations: [
-        InitLogging,
-        DisposeLogging,
+        Init,
+        Dispose,
         GetLogger,
+        SetLoggerLevel,
+        SetLoggerContext,
+        LogFatal,
+        LogError,
+        LogWarn,
+        LogInfo,
+        LogDebug,
+        LogTrack,
+        LogTrace,
         EnableAppender,
         DisableAppender,
         FlushAppender,
         FlushAppenders,
-    EnableFilter,
-    DisableFilter,
-        RegisterPluginFactory,
-
-        // Logger operations (modeled resource-like)
-        LoggerSetLevel,
-        LoggerSetContext,
-        LoggerGetChild,
-        LoggerFatal,
-        LoggerError,
-        LoggerWarn,
-        LoggerInfo,
-        LoggerDebug,
-        LoggerTrack,
-        LoggerTrace
+        EnableFilter,
+        DisableFilter,
+        RegisterPluginFactory
     ]
 }
 
-// Initialization
-operation InitLogging {
-    input: InitLoggingInput
-    output: InitLoggingOutput
-    errors: [PluginFactoryNotFound]
+/// Initialize logging with configuration. Must be called before emitting production logs.
+operation Init {
+    input: InitInput,
+    output: InitOutput,
+    errors: [InvalidConfigError, PluginNotFoundError]
 }
 
-structure InitLoggingInput {
+structure InitInput {
+    @required
     config: LoggingConfig
 }
 
-structure InitLoggingOutput {
+structure InitOutput {
     success: Boolean
 }
 
-// Tear down
-operation DisposeLogging {
-    output: DisposeLoggingOutput
+/// Dispose all plugins and clear resources; can be re-initialized later.
+operation Dispose {
+    input: Unit,
+    output: Unit
 }
 
-structure DisposeLoggingOutput { success: Boolean }
-
-// Access or create a logger by name
+/// Retrieve or create a logger by name; names can be hierarchical (e.g., "app.db").
 operation GetLogger {
-    input: GetLoggerInput
+    input: GetLoggerInput,
     output: GetLoggerOutput
 }
 
-structure GetLoggerInput {
-    @required
-    name: String
+structure GetLoggerInput { @required name: String }
+structure GetLoggerOutput { @required logger: Logger }
+
+/// Update logger's level.
+operation SetLoggerLevel {
+    input: SetLoggerLevelInput,
+    output: Unit
 }
 
-structure GetLoggerOutput {
-    @required
-    name: String
-    // Current level
-    level: LogLevel
+structure SetLoggerLevelInput {
+    @required name: String,
+    @required level: LogLevel
 }
 
-// Appender controls
-operation EnableAppender { input: AppenderByName }
-operation DisableAppender { input: AppenderByName }
-operation FlushAppender { input: AppenderByName }
-operation FlushAppenders {}
+/// Replace logger's context.
+operation SetLoggerContext {
+    input: SetLoggerContextInput,
+    output: Unit
+}
 
-structure AppenderByName { @required name: String }
+structure SetLoggerContextInput {
+    @required name: String,
+    @required context: Document
+}
 
-// Filter controls
-operation EnableFilter { input: FilterToggle }
-operation DisableFilter { input: FilterToggle }
+/// Log operations (message may be string or any serializable document; data is array of documents)
+operation LogFatal { input: LogInput, output: Unit }
+operation LogError { input: LogInput, output: Unit }
+operation LogWarn  { input: LogInput, output: Unit }
+operation LogInfo  { input: LogInput, output: Unit }
+operation LogDebug { input: LogInput, output: Unit }
+operation LogTrack { input: LogInput, output: Unit }
+operation LogTrace { input: LogInput, output: Unit }
 
-// Toggle a filter globally or for a specific appender when provided
-structure FilterToggle {
-    @required name: String
+structure LogInput {
+    @required name: String,
+    message: Document,
+    data: LogDataList
+}
+
+list LogDataList { member: Document }
+
+/// Appender control
+operation EnableAppender  { input: NamedInput, output: Unit }
+operation DisableAppender { input: NamedInput, output: Unit }
+operation FlushAppender   { input: NamedInput, output: Unit }
+operation FlushAppenders  { input: Unit,       output: Unit }
+
+structure NamedInput { @required name: String }
+
+/// Filter control (global or per-appender when appenderName provided)
+operation EnableFilter  { input: FilterControlInput, output: Unit }
+operation DisableFilter { input: FilterControlInput, output: Unit }
+
+structure FilterControlInput {
+    @required name: String,
     appenderName: String
 }
 
-// Plugin registration
+/// Register a custom plugin factory by name and kind. (Code-level registration; no transport.)
+/// Implementations must call this before Init.
 operation RegisterPluginFactory {
-    input: RegisterPluginFactoryInput
-    errors: [DuplicateFactory]
+    input: RegisterPluginFactoryInput,
+    output: Unit,
+    errors: [DuplicatePluginFactoryError]
 }
 
 structure RegisterPluginFactoryInput {
-    @required
-    factoryName: String
-    @required
+    @required name: String,
+    @required kind: PluginKind,
     version: String
-    @required
-    kind: PluginKind
+    /// Additional plugin-specific metadata may be provided out-of-band.
 }
 
-// Logger operations
-operation LoggerSetLevel { input: LoggerSetLevelInput }
-structure LoggerSetLevelInput { @required name: String, @required level: LogLevel }
+// ===== Shapes =====
 
-operation LoggerSetContext { input: LoggerSetContextInput }
-structure LoggerSetContextInput { @required name: String, context: LogContext }
-
-operation LoggerGetChild { input: LoggerGetChildInput, output: GetLoggerOutput }
-structure LoggerGetChildInput { @required parent: String, @required child: String }
-
-// Emission operations (modeled; actual library calls are synchronous void)
-operation LoggerFatal { input: EmitInput }
-operation LoggerError { input: EmitInput }
-operation LoggerWarn { input: EmitInput }
-operation LoggerInfo { input: EmitInput }
-operation LoggerDebug { input: EmitInput }
-operation LoggerTrack { input: EmitInput }
-operation LoggerTrace { input: EmitInput }
-
-structure EmitInput {
-    @required
-    name: String
-    @required
-    message: Document
-    data: DataList
+structure Logger {
+    @required name: String,
+    @required level: LogLevel,
+    @required context: Document,
+    @required isEnabled: Boolean,
+    @required isFatal: Boolean,
+    @required isError: Boolean,
+    @required isWarn: Boolean,
+    @required isInfo: Boolean,
+    @required isDebug: Boolean,
+    @required isTrack: Boolean,
+    @required isTrace: Boolean
 }
+
+structure LoggingConfig {
+    level: LogLevel,
+    loggers: LoggerLevelMap,
+    appenders: AppenderConfigList,
+    filters: FilterConfigRefList
+}
+
+map LoggerLevelMap { key: String, value: LogLevel }
+
+list AppenderConfigList { member: AppenderConfig }
+
+structure AppenderConfig {
+    /// The appender factory name, e.g., "console", "file".
+    @required name: String,
+    enabled: Boolean,
+    priority: Integer,
+    /// Either a string (factory name) or full formatter config. If not expressible, pass string and configure via code.
+    formatter: FormatterConfigRef,
+    /// Each entry may be a string (factory name) or full filter config.
+    filters: FilterConfigRefList
+}
+
+structure FormatterConfigRef {
+    name: String,
+    options: Document
+}
+
+list FilterConfigRefList { member: FilterConfigRef }
+
+structure FilterConfigRef {
+    name: String,
+    options: Document,
+    enabled: Boolean
+}
+
+enum PluginKind { APPENDER, FILTER, FORMATTER }
+
+enum LogLevel { OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACK, TRACE }
 
 // ===== Errors =====
 
 @error("client")
-structure PluginFactoryNotFound { message: String }
+structure InvalidConfigError { @required message: String }
 
 @error("client")
-structure DuplicateFactory { message: String }
+structure PluginNotFoundError { @required message: String, kind: PluginKind, name: String }
 
-// Implementation notes (Smithy comments):
-// - Events logged before init() are buffered up to 100 and flushed on first post-init log emission.
-// - Appenders execute in descending priority order. Missing/undefined priority treated as 0.
-// - Console appender requires global console; file appender requires Node.js fs and a valid path.
-// - Formatter tokens include {timestamp}, {LEVEL}, {level}, {logger}, {message}, {data}, and nested fields via dot-paths.
-// - Logger boolean flags (isFatal/isError/...) indicate enablement for that severity level and higher severity levels.
-// - Global filters (from LoggingConfig.filters) evaluate first; appender-level filters evaluate next. Disabled filters are skipped.
+@error("client")
+structure DuplicatePluginFactoryError { @required message: String, name: String }
+
+// Notes:
+// - Appender/Filter/Formatter-specific option schemas are plugin-defined and not constrained here.
+// - Formatter token semantics and timestamp token grammar are specified in prose sections.
+// - File appender is for Node; console appender works in both Node and browsers.
 ```
 
 ## 10. Error Handling
 
-### General Rules:
-1. Library methods are synchronous; errors are thrown for unrecoverable conditions (e.g., missing plugin factory).
-2. Appender write/flush errors are caught per appender; they are logged to console and do not stop other appenders.
-3. Initialization with invalid appender/filter/formatter names throws.
-4. File appender I/O errors may occur during init (stream creation) or write; these are not retried.
+### General rules
+1. Library shall not throw from logging calls for routine issues; it shall catch appender errors and continue processing other appenders.
+2. Initialization shall throw for missing plugin factories or invalid configuration with descriptive messages.
+3. Error serialization for JSON output shall avoid throwing and shall handle cause chains safely.
+4. Logging APIs shall accept unknown messages/data; formatters decide rendering.
 
-### Error Conditions:
-- PluginFactoryNotFound: Attempted to create a plugin by name/kind without a registered factory.
-- DuplicateFactory: Attempted to register a plugin factory with a name already registered.
-- ConsoleUnavailable: Console not available in environment (console appender cannot operate).
-- FileOpenError: File path not writeable or fs unavailable (file appender cannot operate).
+### Error conditions
+- E-001: Plugin factory not found (by kind/name) during init → throw PluginNotFoundError.
+- E-002: Duplicate plugin factory registration → throw DuplicatePluginFactoryError.
+- E-003: File appender stream open/write error → propagate via console error logging while continuing other appenders; dispose ends stream.
+- E-004: Filter/formatter exceptions → cause the event to be skipped for that component; other components continue.
 
 ## 11. User Interface
-
-This library provides no user interface.
+No end-user UI. Library is consumed programmatically.
 
 ## 12. Acceptance Criteria
 
-### Test Categories
-- Unit: LogM8 manager, logger behavior, buffering, plugin management
-- Integration: Console/file appenders with formatter and filtering
-- Non-functional: Performance of disabled logs, error resilience across appenders
+### Test categories
+- Unit tests: Append/format/filter behavior, utilities, plugin manager, logger flags.
+- Integration tests: End-to-end pipeline, filtering precedence, appender/formatter wiring.
+- Performance tests: Disabled logging fast-path, filter overhead, formatter costs.
+- Security/resilience tests: Filter resilience, safe serialization, no crashes on malformed inputs.
+- Usability tests: Reasonable defaults and behavior under minimal configuration.
 
-### Acceptance Criteria Matrix
-- Init/dispose cycles function without resource leaks (streams closed, plugins disposed)
-- getLogger returns stable instances and supports parent.child names
-- Level gating matches the specified order; enablement-based flags behave as documented
-- Default console and file appenders work with the default text formatter; JSON output works via the JSON formatter
-- Appender priority ordering is descending; enabling/disabling works at runtime
-- Buffering of pre-init logs caps at 100 and flushes correctly
-- Missing plugin factories throw at init; write/flush errors in appenders do not crash process
+### Verification
+- All existing automated tests in the repository shall pass.
+- Adding new plugins per spec shall be possible by implementing the declared interfaces and registering factories before init.
+- Manual smoke test: init with default config, emit logs at various levels, confirm expected console/file outputs.
 
 ## References
-
-- Plugin System: [/spec/spec-plugins.md](/spec/spec-plugins.md)
-- Filters: [/spec/spec-filters.md](/spec/spec-filters.md)
-- Built-in Filter (MatchFilter): [/spec/spec-filters-match.md](/spec/spec-filters-match.md)
-- Built-in Appenders: Console [/spec/spec-appenders-console.md](/spec/spec-appenders-console.md), File [/spec/spec-appenders-file.md](/spec/spec-appenders-file.md)
-- Default Formatter: [/spec/spec-formatter-default.md](/spec/spec-formatter-default.md)
-- Project source types: `src/index.ts`, `src/LogM8.ts`, `src/Log.ts`, `src/LogEvent.ts`, `src/LoggingConfig.ts`, `src/appenders/*`, `src/formatters/*`
-- Utilities: `src/LogM8Utils.ts`
+- Built-in plugin names: console, file, default-formatter, json-formatter, match-filter.
+- Public types: Log, LoggingConfig, Appender/AppenderConfig, Filter/FilterConfig, Formatter/FormatterConfig, LogLevel, LogM8Utils.
+ - API: [/spec/spec-formatters.md](/spec/spec-formatters.md)
+ - API: [/spec/spec-appenders.md](/spec/spec-appenders.md)
+ - API: [/spec/spec-filters.md](/spec/spec-filters.md)

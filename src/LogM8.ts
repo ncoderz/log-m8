@@ -20,7 +20,7 @@ const MAX_LOG_BUFFER_SIZE = 100; // Maximum size of the log buffer before droppi
 const DEFAULT_APPENDERS = [
   {
     name: 'console',
-    formatter: 'default',
+    formatter: 'default-formatter',
   },
 ];
 
@@ -46,7 +46,7 @@ const DEFAULT_APPENDERS = [
  *   level: 'info',
  *   loggers: { 'app.database': 'debug' },
  *   appenders: [
- *     { name: 'console', formatter: 'default' },
+ *     { name: 'console', formatter: 'default-formatter' },
  *     { name: 'file', filename: 'app.log' }
  *   ]
  * });
@@ -104,7 +104,7 @@ class LogM8 {
    *   loggers: { 'app.database': 'debug' },
    *   appenders: [{
    *     name: 'console',
-   *     formatter: 'default',
+   *     formatter: 'default-formatter',
    *     filters: ['sensitive-data']
    *   }]
    * });

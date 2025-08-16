@@ -1,152 +1,99 @@
 ---
-Title: Log-M8 Filters Specification
-Version: 1.2.0
-Date Created: 2025-08-10
-Last Updated: 2025-08-15
+Title: LogM8 Filters Specification
+Version: 1.0.0
+Date Created: 2025-08-16
+Last Updated: 2025-08-16
 ---
----
+
+# Filters
 
 ## 1. Purpose
 
-Define the behavior and interface of Filter plugins that allow appenders to determine whether a log event should be logged.
+Define the behavior of filter plugins that decide whether a given Log Event should be processed.
 
 ## 2. Scope & Context
 
-### What the system will do:
-- Provide a Filter interface extending Plugin
-- Allow appenders to evaluate filters before logging events
-- Support custom filter implementations through the plugin system
-- Provide a built-in MatchFilter for declarative allow/deny matching
+### In scope
+- Global and per-appender filter evaluation semantics
+- Filter plugin interface and lifecycle
+- Built-in match-filter behavior
 
-### What the system will not do:
-- Mutate or transform log events (filters only allow/deny)
-- Provide complex evaluation services or APIs
+### Out of scope
+- Redaction or transformation (formatters handle representation; separate transform filters could be added by custom plugins)
 
-### System Context:
-Filters are plugins created and used by appenders during the logging process. Each appender can have zero or more filters that are evaluated before the event is formatted and output.
+### Context
+- Global filters run before any appender; appender-local filters run before write.
 
 ## 3. Glossary
-
-- **Filter**: A plugin that implements `filter(LogEvent): boolean` to gate log event emission
-- **Filter Evaluation**: The process of calling `filter` on each filter in sequence
-- **Short-circuit**: Stopping evaluation when the first filter returns false
+- Allow rules: All must match to allow (AND semantics).
+- Deny rules: Any match denies (OR semantics); deny takes precedence.
+- Dot-path: Path resolution into Log Event including bracket indices for arrays.
 
 ## 4. Core Features
-
-1. Simple boolean evaluation interface via `filter` method
-2. Plugin-based architecture for custom implementations
-3. Integration with appender logging workflow
-4. Runtime enable/disable at global level and per-appender
+1. Enabled flag to toggle filter activity at runtime.
+2. Deterministic evaluation with deny-over-allow precedence.
+3. Robust dot-path resolution for matching nested data.
 
 ## 5. User Stories
-
-1. As a developer, I want to create custom filters to suppress log events based on specific criteria
-2. As a developer, I want appenders to automatically evaluate filters before logging events
-3. As a developer, I want to configure filters per appender to control which events are logged
+1. As an operator, I can drop noisy logs globally without changing application code.
+2. As a developer, I can filter events at an appender to route only specific categories.
+3. As a security engineer, I can block logs that contain particular context markers.
 
 ## 6. Functional Requirements
 
-- FR-FLTR-001: A Filter extends Plugin with methods: `init(FilterConfig)`, `filter(LogEvent): boolean`, `dispose()`
-- FR-FLTR-002: Appenders evaluate filters in configuration order before logging; if any returns false, the event is not logged
-- FR-FLTR-003: Filters must be synchronous and return boolean values quickly
-- FR-FLTR-004: Filters must not mutate the LogEvent or its properties
-- FR-FLTR-005: When no filters are configured, appenders proceed with logging (subject to other constraints)
-- FR-FLTR-011: Filters expose an `enabled` flag (default true) that can be set via configuration and toggled at runtime; disabled filters are skipped without affecting order.
-- FR-FLTR-012: The manager shall provide enableFilter(name, appenderName?) and disableFilter(name, appenderName?) to toggle global filters or appender-local filters when an appender name is provided.
-- FR-FLTR-013: Appenders shall implement enableFilter(name) and disableFilter(name) for toggling their filter instances.
+### 6.1 Filter Contract
+- FIL-001: Filters implement: name, version, kind='filter', enabled:boolean, init(config), filter(event):boolean, dispose().
+- FIL-002: filter(event) returns true to pass or false to drop.
+- FIL-003: Filters shall be non-throwing during evaluation; unexpected errors imply a conservative false (drop) or are caught by the caller.
 
-MatchFilter (built-in) requirements have been moved to their dedicated specification: see [/spec/spec-filters-match.md](/spec/spec-filters-match.md).
+### 6.2 Built-in Match Filter (name: "match-filter")
+- FIL-010: Configuration supports allow?:Record<string,unknown> and deny?:Record<string,unknown>.
+- FIL-011: Allow: if provided and non-empty, every key/value pair must match (AND) via deep equality (primitives strict, arrays/objects deep, Dates by time).
+- FIL-012: Deny: if provided, any key/value match (OR) results in denial. Deny takes precedence over allow.
+- FIL-013: Dot-path resolution on Log Event supports bracket indices, e.g., data[0].user.id.
+- FIL-014: On unexpected errors during evaluation, the filter returns false (drop) to be conservative.
 
 ## 7. Non-functional Requirements
-
-### 7.1 Performance & Capacity
-- NFR-FLTR-001: Filter evaluation should be fast and avoid unnecessary allocations
-- NFR-FLTR-002: Multiple filters should evaluate in O(n) time
-- NFR-FLTR-004: MatchFilter path resolution must be robust and avoid throwing on missing paths (returns undefined)
-
-### 7.2 Compatibility
-- NFR-FLTR-003: Filters must work in both Node.js and browser environments
+- NFR-FIL-001: Dot-path resolution shall be safe and avoid throwing; unresolved paths yield undefined.
+- NFR-FIL-002: Filter evaluation shall be efficient to minimize overhead in hot paths.
 
 ## 8. Constraints & Assumptions
-
-### Constraints:
-- Filters cannot be asynchronous
-- Filters cannot modify log events
-- Filter evaluation occurs before formatting
-
-### Assumptions:
-- Custom filter implementations are provided by users
-- Filter factories are registered before Log-M8 initialization
-- MatchFilter is registered by default and available via factory name `match-filter`
+- C-FIL-001: Filters do not modify events; they only decide pass/fail.
+- A-FIL-002: Additional filter types (e.g., rate limiters) can be added via custom plugins.
 
 ## 9. API (Smithy IDL)
 
 ```smithy
 $version: "2"
 
-namespace com.ncoderz.logm8.filters
+namespace com.ncoderz.logm8
 
-use com.ncoderz.logm8#LogEvent
-use com.ncoderz.logm8#PluginConfig
-
-// Configuration for filter plugins
-structure FilterConfig extends PluginConfig {
-    // Configuration is open-ended via PluginConfig.options
-    enabled: Boolean
+structure FilterConfigRef {
+  name: String,
+  enabled: Boolean,
+  options: Document
 }
 
-// Built-in MatchFilter configuration is specified in its dedicated spec.
-
-// Abstract model of filter interface
-@title("Filter Interface")
-service FilterInterface {
-    version: "1.0.0"
-    operations: [ShouldLog]
+structure MatchFilterConfig {
+  name: String = "match-filter",
+  enabled: Boolean,
+  allow: MapOfAny,
+  deny: MapOfAny
 }
 
-// Evaluate whether an event should be logged
-operation ShouldLog {
-    input: ShouldLogInput
-    output: ShouldLogOutput
-}
-
-structure ShouldLogInput {
-    @required
-    event: LogEvent
-}
-
-structure ShouldLogOutput {
-    @required
-    filter: Boolean
-}
-
-// Implementation notes:
-// - Filters are implemented as TypeScript/JavaScript classes extending Plugin
-// - filter() is called synchronously by appenders during write()
-// - Filter instances are created per appender during initialization
-// - Disabled filters are skipped; global filters (from LoggingConfig) run before appender-level filters
+map MapOfAny { key: String, value: Document }
 ```
 
 ## 10. Error Handling
-
-- Filter initialization errors during Log-M8 setup prevent startup
-- Runtime errors in filter evaluation are logged but do not prevent other appenders from processing events
+- Filter evaluation must not throw; errors imply a drop result for safety.
 
 ## 11. User Interface
-
-None.
+- None.
 
 ## 12. Acceptance Criteria
-
-- Filters can be implemented by extending the Plugin interface
-- Appenders call filter() on each filter in sequence before logging
-- When any filter returns false, the event is not logged by that appender
-- Filters cannot modify the LogEvent being evaluated
-- MatchFilter behavior, configuration, and path/equality semantics are verified per [/spec/spec-filters-match.md](/spec/spec-filters-match.md)
+- AC-FIL-001: Deny-over-allow precedence verified with conflicting rules.
+- AC-FIL-002: Dot-path resolution works for nested object and array indices.
+- AC-FIL-003: Errors during evaluation do not crash logging and conservatively drop.
 
 ## References
-
-- Root: [/spec/spec.md](/spec/spec.md)
-- Plugins: [/spec/spec-plugins.md](/spec/spec-plugins.md)
-- Code: `src/Filter.ts`, `src/FilterConfig.ts`, `src/PluginManager.ts`
-- Built-in: See [/spec/spec-filters-match.md](/spec/spec-filters-match.md); also `src/LogM8Utils.ts` (path traversal)
+- Parent: [/spec/spec.md](/spec/spec.md)

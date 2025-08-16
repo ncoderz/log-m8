@@ -25,11 +25,29 @@ const SUPPORTED_LEVELS = new Set<LogLevelType>([
   LogLevel.trace,
 ]);
 
+/**
+ * Configuration options for the file appender.
+ *
+ * - filename: Destination file path. The file is opened on init.
+ * - append:   When true, appends to the existing file; otherwise it is truncated.
+ */
 export interface FileAppenderConfig extends AppenderConfig {
+  /** Destination file path to write logs into. */
   filename: string;
+  /** Append to existing file (true) or overwrite on startup (false). Default: false */
   append?: boolean;
 }
 
+/**
+ * Appender that writes each formatted log event to a file (one line per event).
+ *
+ * Behavior
+ * - Initializes a WriteStream on init() using the provided filename.
+ * - Joins formatted tokens with a single space and appends a trailing newline.
+ * - If no formatter is configured, writes the raw LogEvent via String() coercion of tokens.
+ * - Respects per-appender filters before writing.
+ * - flush() is a no-op; data is flushed by the stream implementation. dispose() ends the stream.
+ */
 class FileAppender implements Appender {
   public name = NAME;
   public version = VERSION;

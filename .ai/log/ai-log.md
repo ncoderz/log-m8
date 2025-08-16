@@ -1,5 +1,59 @@
 ## 2025-08-16
 
+### Add user documentation: root README and detailed docs under /doc
+
+Create a high-quality user docs set based on the specs: a welcoming root README, and focused guides for configuration, appenders, formatters, filters, plus an API reference. All docs cross-link with backlinks as required.
+
+- **Affects:** `[doc]`
+
+#### README.md
+
+- `Doc +` New project overview with quick start, configuration examples, built-in plugins list, and links to detailed docs and specs.
+
+#### doc/README.md
+
+- `Doc +` Docs index with navigation to configuration, appenders, formatters, filters, and API reference; backlink to project root.
+
+#### doc/configuration.md
+
+- `Doc +` Explained defaults, shapes, and practical configuration examples (per-logger levels, filters, priorities, runtime control) with backlinks.
+
+#### doc/appenders.md
+
+- `Doc +` Documented console and file appenders, common contract, configs, examples, and spec link.
+
+#### doc/formatters.md
+
+- `Doc +` Described default text and JSON formatters, token grammar, timestamp presets, colorization, safe JSON, configs, and examples; fixed markdown lint by code-formatting default field list.
+
+#### doc/filters.md
+
+- `Doc +` Covered filter contract, match-filter allow/deny semantics, dot-path examples, global vs per-appender placement, and runtime toggles with backlinks and spec link.
+
+#### doc/api.md
+
+- `Doc +` Summarized Logging and Log APIs, built-in plugin names, utilities (getPropertyByPath, formatTimestamp, stringifyLog), and configuration shape cheatsheet with navigation links.
+
+### Add License section to README
+
+Append a concise License section at the end of README referencing the repository LICENSE file and attribution.
+
+- **Affects:** `[doc]`
+
+#### README.md
+
+- `Doc ~` Appended "License" section with BSD 2-Clause attribution and link to LICENSE.
+
+### Document logger context usage in README
+
+Add a comprehensive "Using context" section: setting/replacing context, rendering via default and JSON formatters with dot-paths, and filtering by context with match-filter. Includes practical tips and examples.
+
+- **Affects:** `[doc]`
+
+#### README.md
+
+- `Doc ~` Inserted "Using context" section with code examples and best-practice tips.
+
 ### Clarify formatter documentation to match actual behavior
 
 Updates JSDoc comments for DefaultFormatter and JsonFormatter to accurately describe configuration, token handling, colorization behavior, and output shapes. No runtime logic changes.
@@ -28,17 +82,33 @@ Updates JSDoc comments for DefaultFormatter and JsonFormatter to accurately desc
   - `Other` Anything that cannot fit the above tags.
 ## 2025-08-16
 
+### Restructure README with explicit user-focused sections
+
+Rewrite root README to follow the requested structure: Features, Quick Start, Installation, Configuration, Hierarchical Loggers, Log Levels, Context, Appenders, Formatters, Filters, Runtime Control, Custom Plugins, API Documentation, and Environment Compatibility. Content consolidated from existing README and /doc pages with links preserved.
+
+- **Affects:** `[doc]`
+
+#### README.md
+
+- `Doc ~` Restructured headings and tightened examples; added Installation and Environment Compatibility sections; kept links to detailed docs.
+### Add README Table of Contents
+
+Insert a linked TOC at the top of README covering all major sections, including License.
+
+- **Affects:** `[doc]`
+
+#### README.md
+
+- `Doc ~` Added Table of Contents with anchors for Features, Quick Start, Installation, Configuration, Hierarchical Loggers, Log Levels, Context, Appenders, Formatters, Filters, Runtime Control, Custom Plugins, API Documentation, Environment Compatibility, and License.
+## 2025-08-16
+
 ### Split JSON formatting into dedicated JsonFormatter and update docs
 
 Update documentation and specs to reflect that DefaultFormatter is text-only and JSON output is handled by a new JsonFormatter. Adjust examples, config schemas, and README links. Add a dedicated spec for JsonFormatter and correct LogM8Utils stringify options in API docs.
 
-- **Affects:** `[doc]` `[spec]`
 
 #### doc/api.md
 
-- `Doc ~` Replace DefaultFormatter JSON mode with new JsonFormatter section and examples.
-- `Doc ~` Update FileAppender examples to use `json-formatter` and pretty/size options.
-- `Doc ~` Fix `StringifyLogOptions` fields to `maxStringLength` / `maxArrayLength`.
 
 #### README.md
 
@@ -46,11 +116,8 @@ Update documentation and specs to reflect that DefaultFormatter is text-only and
 - `Doc ~` Update advanced configuration to use `json-formatter`.
 - `Doc ~` Split formatter sections into Default (Text) and Json (Structured); fix TOC anchors.
 
-#### doc/code-documentation-summary.md
 
 - `Doc ~` Reflect DefaultFormatter as text-only and add JsonFormatter.
-
-#### spec/spec-formatter-default.md
 
 - `Spec ~` Remove JSON mode; clarify text-only behavior and configuration.
 
@@ -75,6 +142,28 @@ Update documentation and specs to reflect that DefaultFormatter is text-only and
   - `Test` Tests or fixtures.
   - `Other` Anything that cannot fit the above tags.
 ## 2025-08-15
+
+### Add child specifications for formatters, appenders, and filters; link from root spec
+
+Create focused specs for the formatter, appender, and filter subsystems, and update the root spec References section to link to them. Clarifies token grammar, colorization, JSON pretty/limits, console/file behaviors, and match-filter semantics.
+
+- **Affects:** `[spec]` `[doc]`
+
+#### spec/spec-formatters.md
+
+- `Spec +` Default text formatter and JSON formatter requirements, token grammar, timestamp formats, colorization, and Smithy config shapes.
+
+#### spec/spec-appenders.md
+
+- `Spec +` Console and file appender contracts, level mappings, priority, enable/disable, and Smithy config shapes.
+
+#### spec/spec-filters.md
+
+- `Spec +` Filter contract and built-in match-filter allow/deny semantics, dot-path resolution, and Smithy config shapes.
+
+#### spec/spec.md
+
+- `Spec ~` Add links to child specs in References section.
 
 ### Document LogM8Utils.stringifyLog and serializeError in API docs
 
@@ -263,10 +352,37 @@ Fixes instances where 'trace' was listed before 'track'. Ensures consistent leve
 
 # 2025-08-13
 
+### Correct AI log entry for today
+
+Clarifies that no changes were made to other docs; only the root project specification was added under spec/spec.md. The earlier entry mentioning doc/api.md edits is erroneous.
+
+- **Affects:** `[other]`
+
+#### .ai/log/ai-log.md
+
+- `Other +` Correction note: restrict actual change scope to spec/spec.md creation only.
+
 ## Corrected specification mismatches with implementation
 
 Fixed several discrepancies between the specification and actual implementation behavior, particularly around logger boolean flags and appender priority ordering. Also updated spec after Logger.setLevel() interface was corrected.
 
+### Verify and fix mismatches found by tests and dev runs
+
+Validated interface docs against compile errors and runtime traces. Corrected examples to reference available factories (default-formatter, json-formatter), documented filter enable/disable behavior, and ensured stringifyLog option names match implementation.
+
+- **Affects:** `[doc]` `[comment]`
+
+#### src/LogM8.ts
+
+- `Comment ~` Aligned DEFAULT_APPENDERS example and init() usage with actual factory names.
+
+#### src/formatters/DefaultFormatter.ts
+
+- `Comment ~` Clarified token handling and browser/Node coloring outputs.
+
+#### src/appenders/FileAppender.ts
+
+- `Comment ~` Added lifecycle and write behavior notes for one-line-per-event output.
 - **Affects:** `[spec]` `[code]`
 
 ### spec/spec.md

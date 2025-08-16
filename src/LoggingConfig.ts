@@ -24,12 +24,12 @@ import type { LogLevelType } from './LogLevel.ts';
  *   appenders: [
  *     {
  *       name: 'console',
- *       formatter: { name: 'default', color: true }
+ *       formatter: { name: 'default-formatter', color: true }
  *     },
  *     {
  *       name: 'file',
  *       filename: 'app.log',
- *       formatter: { name: 'default', json: true }
+ *       formatter: { name: 'json-formatter', pretty: true }
  *     }
  *   ]
  * };
@@ -79,5 +79,13 @@ export interface LoggingConfig {
    */
   appenders?: AppenderConfig[];
 
+  /**
+   * Global filters applied before any appender-specific processing.
+   *
+   * Each entry may be a string (filter factory name) or a full FilterConfig
+   * object. Global filters run first and can drop events entirely before they
+   * reach appenders. Appenders may also define their own filters via
+   * AppenderConfig.filters.
+   */
   filters?: (string | FilterConfig)[];
 }
