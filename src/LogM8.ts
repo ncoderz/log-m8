@@ -4,6 +4,7 @@ import { ConsoleAppenderFactory } from './appenders/ConsoleAppender.ts';
 import { FileAppenderFactory } from './appenders/FileAppender.ts';
 import { MatchFilterFactory } from './filters/MatchFilter.ts';
 import { DefaultFormatterFactory } from './formatters/DefaultFormatter.ts';
+import { JsonFormatterFactory } from './formatters/JsonFormatter.ts';
 import type { Appender, AppenderConfig, Filter, Formatter } from './index.ts';
 import type { Log } from './Log.ts';
 import type { LogContext } from './LogContext.ts';
@@ -78,6 +79,7 @@ class LogM8 {
     this._pluginManager.registerPluginFactory(new ConsoleAppenderFactory());
     this._pluginManager.registerPluginFactory(new FileAppenderFactory());
     this._pluginManager.registerPluginFactory(new DefaultFormatterFactory());
+    this._pluginManager.registerPluginFactory(new JsonFormatterFactory());
     this._pluginManager.registerPluginFactory(new MatchFilterFactory());
   }
 

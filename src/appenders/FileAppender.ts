@@ -7,6 +7,7 @@ import type { Filter } from '../Filter.ts';
 import type { Formatter } from '../Formatter.ts';
 import type { LogEvent } from '../LogEvent.ts';
 import { LogLevel, type LogLevelType } from '../LogLevel.ts';
+import { LogM8Utils } from '../LogM8Utils.ts';
 import type { PluginFactory } from '../PluginFactory.ts';
 import { PluginKind } from '../PluginKind.ts';
 
@@ -74,12 +75,8 @@ class FileAppender implements Appender {
     // Log
     const message = data
       .map((d) => {
-        if (typeof d === 'string') return d;
-        try {
-          return JSON.stringify(d, null, 2);
-        } catch (_e) {
-          return String(d);
-        }
+        if (LogM8Utils.isString(d)) return d;
+        return String(d);
       })
       .join(' ');
     this._stream.write(message + '\n');

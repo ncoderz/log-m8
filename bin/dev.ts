@@ -3,7 +3,7 @@ import { Logging, LogLevel } from '../src/index.ts';
 function main() {
   const logEarly = Logging.getLogger('before').getLogger('main').getLogger('init');
 
-  logEarly.info('Initializing logging system...');
+  // logEarly.info('Initializing logging system...');
 
   Logging.init({
     level: LogLevel.debug,
@@ -14,9 +14,8 @@ function main() {
       {
         name: 'console',
         formatter: {
-          name: 'default',
+          name: 'default-formatter',
           color: true,
-          // json: true,
           // timestampFormat: 'hh:mm:ss.SSS',
           // format: ['{timestamp} [{level}] {message}', '{data}'],
         },
@@ -24,9 +23,9 @@ function main() {
       {
         name: 'file',
         formatter: {
-          name: 'default',
-          json: true,
+          name: 'json-formatter',
           timestampFormat: 'hh:mm:ss.SSS',
+          pretty: true,
         },
         filename: 'app.log',
         append: false,
@@ -44,14 +43,18 @@ function main() {
     nested: { key: 'value' },
   };
 
-  log.trace('This is a trace message');
-  log.track('This is a tracking message');
+  const err = new Error('Something went wrong');
+  const cause = new Error('Root cause error');
+  err.cause = cause;
+
+  // log.trace('This is a trace message');
+  // log.track('This is a tracking message');
   log.debug('This is a debug message', data, { inline: 'data' });
-  log.info('This is an info message');
+  // log.info('This is an info message');
   log.info({ inline: 'data' });
-  log.warn('This is a warning message');
-  log.error('This is an error message');
-  log.fatal('This is a fatal message');
+  // log.warn('This is a warning message');
+  // log.error('This is an error message', err);
+  // log.fatal('This is a fatal message');
 }
 
 main();
