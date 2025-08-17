@@ -17,7 +17,7 @@ A fast, small, flexible and extensible logging system for TypeScript and JavaScr
 - 🚀 **Performance-optimized** - designed for minimal overhead
 - 🌐 **Browser & Node.js support** - works in any JavaScript environment
 - 📦 **ESM & CommonJS compatible** - use with any module system
-- 💪 **Zero dependencies** - lightweight and fast
+- 💪 **Zero dependencies** - lightweight and fast (minified + gzipped ~6kB)
 
 ## Installation
 
@@ -99,18 +99,18 @@ LogM8.init({
   appenders: [
     {
       name: 'console',
-      formatter: 'default-formatter',
+      formatter: {
+        name: 'default-formatter',
+        timestampFormat: 'yyyy-MM-dd hh:mm:ss.SSS',
+        color: true
+      },
       // Optional priority (higher runs first)
       priority: 100,
-      color: true
     },
     {
       name: 'file',
       filename: 'app.log',
-      formatter: {
-        name: 'default-formatter',
-        timestampFormat: 'yyyy-MM-dd hh:mm:ss.SSS',
-      }
+      formatter: 'json-formatter',
     }
   ],
 
