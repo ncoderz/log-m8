@@ -65,8 +65,9 @@ class MatchFilter implements Filter {
    */
   public init(config: FilterConfig): void {
     const cfg = (config ?? {}) as MatchFilterConfig;
-    this._allow = cfg.allow ?? undefined;
-    this._deny = cfg.deny ?? undefined;
+    // Pre-compile any regex-like strings (e.g., '/pattern/flags') in rule maps for efficiency
+    this._allow = this._prepareRules(cfg.allow);
+    this._deny = this._prepareRules(cfg.deny);
     this.enabled = cfg.enabled !== false; // Default to true if not specified
   }
 
@@ -88,7 +89,7 @@ class MatchFilter implements Filter {
       if (this._allow && Object.keys(this._allow).length > 0) {
         for (const [path, expected] of Object.entries(this._allow)) {
           const actual = LogM8Utils.getPropertyByPath(logEvent, path);
-          if (!this._isEqual(actual, expected)) return false;
+          if (!this._matches(actual, expected)) return false;
         }
       }
 
@@ -96,7 +97,7 @@ class MatchFilter implements Filter {
       if (this._deny && Object.keys(this._deny).length > 0) {
         for (const [path, expected] of Object.entries(this._deny)) {
           const actual = LogM8Utils.getPropertyByPath(logEvent, path);
-          if (this._isEqual(actual, expected)) return false;
+          if (this._matches(actual, expected)) return false;
         }
       }
 
@@ -105,6 +106,18 @@ class MatchFilter implements Filter {
       // Be conservative on unexpected errors
       return false;
     }
+  }
+
+  // Matches actual against expected, supporting RegExp; otherwise deep equality.
+  private _matches(actual: unknown, expected: unknown): boolean {
+    // Pre-compiled regex
+    if (expected instanceof RegExp) {
+      if (actual === undefined || actual === null) return false;
+      const asString = typeof actual === 'string' ? actual : String(actual);
+      return expected.test(asString);
+    }
+
+    return this._isEqual(actual, expected);
   }
 
   // Simple deep equality for primitives, arrays, plain objects, dates
@@ -153,6 +166,21 @@ class MatchFilter implements Filter {
       !Array.isArray(val) &&
       Object.getPrototypeOf(val) === Object.prototype
     );
+  }
+
+  // Convert rule map values: regex-like strings -> RegExp; leave others as-is.
+  private _prepareRules(map?: Record<string, unknown>): Record<string, unknown> | undefined {
+    if (!map || Object.keys(map).length === 0) return undefined;
+    const prepared: Record<string, unknown> = {};
+    for (const [path, val] of Object.entries(map)) {
+      if (typeof val === 'string') {
+        const rx = LogM8Utils.parseRegexFromString(val);
+        prepared[path] = rx ?? val;
+      } else {
+        prepared[path] = val;
+      }
+    }
+    return prepared;
   }
 }
 
