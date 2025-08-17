@@ -1,5 +1,7 @@
 import { ConsoleAppenderFactory } from './appenders/ConsoleAppender.ts';
+/* NODEJS:START */
 import { FileAppenderFactory } from './appenders/FileAppender.ts';
+/* NODEJS:END */
 import { MatchFilterFactory } from './filters/MatchFilter.ts';
 import { DefaultFormatterFactory } from './formatters/DefaultFormatter.ts';
 import { JsonFormatterFactory } from './formatters/JsonFormatter.ts';
@@ -76,7 +78,9 @@ class LogM8 {
   constructor() {
     // Register built-in plugin factories for console/file appenders and default formatter
     this._pluginManager.registerPluginFactory(new ConsoleAppenderFactory());
+    /* NODEJS:START */
     this._pluginManager.registerPluginFactory(new FileAppenderFactory());
+    /* NODEJS:END */
     this._pluginManager.registerPluginFactory(new DefaultFormatterFactory());
     this._pluginManager.registerPluginFactory(new JsonFormatterFactory());
     this._pluginManager.registerPluginFactory(new MatchFilterFactory());

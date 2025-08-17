@@ -1,10 +1,12 @@
-import { LogM8 } from './LogM8.ts';
+import { LogM8 as Logging } from './LogM8.ts';
 
 // Type exports for public API
 export { type Appender } from './Appender.ts';
 export { type AppenderConfig } from './AppenderConfig.ts';
 export { type ConsoleAppenderConfig } from './appenders/ConsoleAppender.ts';
+/* NODEJS:START */
 export { type FileAppenderConfig } from './appenders/FileAppender.ts';
+/* NODEJS:END */
 export { type Filter } from './Filter.ts';
 export { type FilterConfig } from './FilterConfig.ts';
 export { type MatchFilterConfig } from './filters/MatchFilter.ts';
@@ -29,15 +31,15 @@ export { PluginKind, type PluginKindType } from './PluginKind.ts';
  *
  * @example
  * ```typescript
- * import { Logging } from 'log-m8';
+ * import { LogM8 } from 'log-m8';
  *
  * // Initialize with default console output
- * Logging.init();
+ * LogM8.init();
  *
  * // Get a logger and start logging
- * const logger = Logging.getLogger('app');
+ * const logger = LogM8.getLogger('app');
  * logger.info('Application started');
  * ```
  */
-const Logging = new LogM8();
-export { Logging };
+const LogM8 = new Logging();
+export { LogM8 };

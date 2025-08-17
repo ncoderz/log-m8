@@ -101,7 +101,8 @@ LogM8.init({
       name: 'console',
       formatter: 'default-formatter',
       // Optional priority (higher runs first)
-      priority: 100
+      priority: 100,
+      color: true
     },
     {
       name: 'file',
@@ -109,7 +110,6 @@ LogM8.init({
       formatter: {
         name: 'default-formatter',
         timestampFormat: 'yyyy-MM-dd hh:mm:ss.SSS',
-        color: false
       }
     }
   ],
@@ -295,9 +295,9 @@ LogM8.init({
 Log-m8 works in browsers with automatic environment detection:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/log-m8/dist/browser/log-m8.global.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ncoderz/log-m8@latest/dist/browser/log-m8.global.js"></script>
 <script>
-  const { LogM8 } = window.LogM8;
+  const { LogM8 } = window.logM8;
 
   LogM8.init({
     level: 'info',

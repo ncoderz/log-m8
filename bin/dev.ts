@@ -1,11 +1,11 @@
-import { Logging, LogLevel } from '../src/index.ts';
+import { LogLevel, LogM8 } from '../src/index.ts';
 
 function main() {
-  const logEarly = Logging.getLogger('before').getLogger('main').getLogger('init');
+  const logEarly = LogM8.getLogger('before').getLogger('main').getLogger('init');
 
   logEarly.info('Initializing logging system...');
 
-  Logging.init({
+  LogM8.init({
     level: LogLevel.debug,
     loggers: {
       default: LogLevel.trace,
@@ -34,7 +34,7 @@ function main() {
   });
   // Logging.init();
 
-  const log = Logging.getLogger('default');
+  const log = LogM8.getLogger('default');
   const data = {
     user: 'john_doe',
     action: 'login',
