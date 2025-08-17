@@ -67,7 +67,6 @@ Log-m8 provides multiple logging levels in ascending order of verbosity:
 | `track` | Analytics and user behavior tracking events |
 | `trace` | Most detailed execution information for fine-grained debugging |
 
-When a logger is set to a specific level, it emits events at that level and all levels above it in the list. For example, a logger set to `info` will emit `fatal`, `error`, `warn`, and `info` events, but not `debug`, `track`, or `trace` events.
 
 ### Hierarchical Loggers
 
@@ -76,7 +75,7 @@ Loggers are organized hierarchically using dot notation:
 ```typescript
 const appLogger = LogM8.getLogger('app');
 const dbLogger = LogM8.getLogger('app.database');
-const cacheLogger = LogM8.getLogger('app.cache');
+const cacheLogger = appLogger.getLogger('cache'); // 'app.cache'
 ```
 
 This allows you to configure logging granularly by component while maintaining a clean organizational structure.
@@ -102,7 +101,8 @@ LogM8.init({
       name: 'console',
       formatter: 'default-formatter',
       // Optional priority (higher runs first)
-      priority: 100
+      priority: 100,
+      color: true
     },
     {
       name: 'file',
@@ -110,7 +110,6 @@ LogM8.init({
       formatter: {
         name: 'default-formatter',
         timestampFormat: 'yyyy-MM-dd hh:mm:ss.SSS',
-        color: false
       }
     }
   ],
@@ -260,6 +259,46 @@ LogM8.enableFilter('sensitive-data', 'console');
 
 ```
 
+### Adjusting log levels at runtime
+
+You can change the effective logging thresholds without recreating loggers:
+
+```typescript
+// Set global log level gate (does not change individual logger levels)
+LogM8.setLevel('info');
+
+// Set a specific logger's level via manager (equivalent to getLogger(...).setLevel)
+LogM8.setLevel('debug', 'app.database');
+
+// Or use the logger instance directly
+const alpha = LogM8.getLogger('alpha');
+alpha.setLevel('warn');
+```
+
+Behavior rules:
+
+- A message is emitted only if its level is enabled by BOTH the logger’s level and the global level.
+- Think of the effective level as the stricter bound: effective = min(loggerLevel, globalLevel) in the level order
+  (off < fatal < error < warn < info < debug < track < trace).
+
+Example sequence:
+
+```typescript
+const warnLogger = LogM8.getLogger('alpha');
+warnLogger.setLevel('warn');
+const debugLogger = LogM8.getLogger('beta');
+debugLogger.setLevel('debug');
+
+// Global: info → beta logs info+, alpha logs warn+
+LogM8.setLevel('info');
+
+// Global: debug → beta logs debug+, alpha still logs warn+
+LogM8.setLevel('debug');
+
+// Global: info again → beta logs info+, alpha still logs warn+
+LogM8.setLevel('info');
+```
+
 ## Extending with Custom Plugins
 
 You can extend log-m8 with custom appenders, formatters, and filters.
@@ -296,9 +335,9 @@ LogM8.init({
 Log-m8 works in browsers with automatic environment detection:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/log-m8/dist/browser/log-m8.global.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ncoderz/log-m8@latest/dist/browser/log-m8.global.js"></script>
 <script>
-  const { LogM8 } = window.LogM8;
+  const { LogM8 } = window.logM8;
 
   LogM8.init({
     level: 'info',
