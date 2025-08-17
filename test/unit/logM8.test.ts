@@ -183,4 +183,80 @@ describe('LogM8 core', () => {
     });
     expect(a1.writes.length).toBe(0);
   });
+
+  it('per-logger levels combine with global level as the stricter bound', () => {
+    const spyFactory = new SpyAppenderFactory();
+    logm8.registerPluginFactory(spyFactory);
+    logm8.init({ appenders: [{ name: 'spy' }] });
+
+    const warnLogger = logm8.getLogger('alpha');
+    warnLogger.setLevel(LogLevel.warn);
+    const debugLogger = logm8.getLogger('beta');
+    debugLogger.setLevel(LogLevel.debug);
+
+    const spy = spyFactory.instances[0];
+
+    // Phase 1: global = info
+    spy.writes = [];
+    logm8.setLevel(LogLevel.info);
+    warnLogger.info('w-info');
+    warnLogger.warn('w-warn');
+    warnLogger.debug('w-debug');
+    warnLogger.error('w-error');
+    debugLogger.debug('d-debug');
+    debugLogger.info('d-info');
+    debugLogger.warn('d-warn');
+    debugLogger.trace('d-trace');
+
+    expect(spy.writes).toContain('alpha:warn:w-warn');
+    expect(spy.writes).toContain('alpha:error:w-error');
+    expect(spy.writes).not.toContain('alpha:info:w-info');
+    expect(spy.writes).not.toContain('alpha:debug:w-debug');
+    expect(spy.writes).toContain('beta:info:d-info');
+    expect(spy.writes).toContain('beta:warn:d-warn');
+    expect(spy.writes).not.toContain('beta:debug:d-debug');
+    expect(spy.writes).not.toContain('beta:trace:d-trace');
+
+    // Phase 2: global = debug
+    spy.writes = [];
+    logm8.setLevel(LogLevel.debug);
+    warnLogger.info('w-info');
+    warnLogger.warn('w-warn');
+    warnLogger.debug('w-debug');
+    warnLogger.error('w-error');
+    debugLogger.debug('d-debug');
+    debugLogger.info('d-info');
+    debugLogger.warn('d-warn');
+    debugLogger.trace('d-trace');
+
+    expect(spy.writes).toContain('alpha:warn:w-warn');
+    expect(spy.writes).toContain('alpha:error:w-error');
+    expect(spy.writes).not.toContain('alpha:info:w-info');
+    expect(spy.writes).not.toContain('alpha:debug:w-debug');
+    expect(spy.writes).toContain('beta:debug:d-debug');
+    expect(spy.writes).toContain('beta:info:d-info');
+    expect(spy.writes).toContain('beta:warn:d-warn');
+    expect(spy.writes).not.toContain('beta:trace:d-trace');
+
+    // Phase 3: global = info
+    spy.writes = [];
+    logm8.setLevel(LogLevel.info);
+    warnLogger.info('w-info');
+    warnLogger.warn('w-warn');
+    warnLogger.debug('w-debug');
+    warnLogger.error('w-error');
+    debugLogger.debug('d-debug');
+    debugLogger.info('d-info');
+    debugLogger.warn('d-warn');
+    debugLogger.trace('d-trace');
+
+    expect(spy.writes).toContain('alpha:warn:w-warn');
+    expect(spy.writes).toContain('alpha:error:w-error');
+    expect(spy.writes).not.toContain('alpha:info:w-info');
+    expect(spy.writes).not.toContain('alpha:debug:w-debug');
+    expect(spy.writes).toContain('beta:info:d-info');
+    expect(spy.writes).toContain('beta:warn:d-warn');
+    expect(spy.writes).not.toContain('beta:debug:d-debug');
+    expect(spy.writes).not.toContain('beta:trace:d-trace');
+  });
 });

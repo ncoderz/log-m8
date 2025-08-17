@@ -259,6 +259,46 @@ LogM8.enableFilter('sensitive-data', 'console');
 
 ```
 
+### Adjusting log levels at runtime
+
+You can change the effective logging thresholds without recreating loggers:
+
+```typescript
+// Set global log level gate (does not change individual logger levels)
+LogM8.setLevel('info');
+
+// Set a specific logger's level via manager (equivalent to getLogger(...).setLevel)
+LogM8.setLevel('debug', 'app.database');
+
+// Or use the logger instance directly
+const alpha = LogM8.getLogger('alpha');
+alpha.setLevel('warn');
+```
+
+Behavior rules:
+
+- A message is emitted only if its level is enabled by BOTH the logger’s level and the global level.
+- Think of the effective level as the stricter bound: effective = min(loggerLevel, globalLevel) in the level order
+  (off < fatal < error < warn < info < debug < track < trace).
+
+Example sequence:
+
+```typescript
+const warnLogger = LogM8.getLogger('alpha');
+warnLogger.setLevel('warn');
+const debugLogger = LogM8.getLogger('beta');
+debugLogger.setLevel('debug');
+
+// Global: info → beta logs info+, alpha logs warn+
+LogM8.setLevel('info');
+
+// Global: debug → beta logs debug+, alpha still logs warn+
+LogM8.setLevel('debug');
+
+// Global: info again → beta logs info+, alpha still logs warn+
+LogM8.setLevel('info');
+```
+
 ## Extending with Custom Plugins
 
 You can extend log-m8 with custom appenders, formatters, and filters.

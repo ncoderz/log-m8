@@ -62,20 +62,34 @@ const DEFAULT_APPENDERS = [
  * ```
  */
 class LogM8 {
-  private _initialized = false;
-  private _pluginManager: PluginManager = new PluginManager();
-  private _loggers: Map<string, Log> = new Map();
-  private _appenders: Appender[] = [];
+  private _initialized: boolean;
+  private _pluginManager: PluginManager;
+  private _loggers: Map<string, Log>;
+  private _appenders: Appender[];
   private _filters: Filter[] = [];
 
-  private _defaultLevel: LogLevelType = LogLevel.info;
-  private _logLevelValues = Object.values(LogLevel);
-  private _logLevelSet = new Set<LogLevelType>(this._logLevelValues);
+  private _globalLogLevel: LogLevelType;
+  private _globalLogLevelNumber: number;
+  private _logLevelValues: LogLevelType[];
+  private _logLevelSet: Set<LogLevelType>;
 
   // Buffer for log events before the system is initialized
-  private _logBuffer: LogEvent[] = [];
+  private _logBuffer: LogEvent[];
 
   constructor() {
+    this._initialized = false;
+    this._pluginManager = new PluginManager();
+    this._loggers = new Map();
+    this._appenders = [];
+    this._filters = [];
+
+    this._logLevelValues = Object.values(LogLevel);
+    this._logLevelSet = new Set<LogLevelType>(this._logLevelValues);
+    this._globalLogLevel = LogLevel.info;
+    this._globalLogLevelNumber = this._logLevelValues.indexOf(LogLevel.info);
+
+    this._logBuffer = [];
+
     // Register built-in plugin factories for console/file appenders and default formatter
     this._pluginManager.registerPluginFactory(new ConsoleAppenderFactory());
     /* NODEJS:START */
@@ -119,7 +133,7 @@ class LogM8 {
     this._reset();
 
     // Set the default logging level
-    this._defaultLevel = this._logLevelSet.has(config.level as LogLevelType)
+    this._globalLogLevel = this._logLevelSet.has(config.level as LogLevelType)
       ? (config.level as LogLevelType)
       : LogLevel.info;
 
@@ -128,7 +142,7 @@ class LogM8 {
       const logger = this.getLogger(name);
       const l = this._logLevelSet.has(level as LogLevelType)
         ? (level as LogLevelType)
-        : this._defaultLevel;
+        : this._globalLogLevel;
       logger.setLevel(l);
     }
 
@@ -247,7 +261,7 @@ class LogM8 {
 
     const logger: LogImpl = {
       name: nameStr,
-      level: this._defaultLevel,
+      level: this._globalLogLevel,
       context: {},
     } as LogImpl;
 
@@ -264,11 +278,27 @@ class LogM8 {
     logger.getLogger = (name) => this.getLogger([logger.name, name]);
 
     // Set initial level and context
-    this._setLevel(logger, this._defaultLevel);
+    this._setLevel(logger, this._globalLogLevel);
 
     this._loggers.set(logger.name, logger);
 
     return logger;
+  }
+
+  /**
+   * Sets the global logging level or a specific logger's level.
+   *
+   * @param level - New logging level name (e.g., 'info', 'debug', 'off')
+   * @param logger - Optional logger name to set level for a specific logger
+   */
+  public setLevel(level: LogLevelType, logger?: string): void {
+    if (logger) {
+      this.getLogger(logger).setLevel(level);
+    } else {
+      // Set global log level
+      this._globalLogLevel = this._logLevelSet.has(level) ? level : this._globalLogLevel;
+      this._globalLogLevelNumber = this._logLevelValues.indexOf(this._globalLogLevel);
+    }
   }
 
   /**
@@ -414,7 +444,7 @@ class LogM8 {
   ): void {
     // Early return if level not enabled - O(1) performance for disabled logs
     const levelNumber = this._logLevelValues.indexOf(level);
-    if (levelNumber > logger._levelNumber) return;
+    if (levelNumber > logger._levelNumber || levelNumber > this._globalLogLevelNumber) return;
 
     // Create a log event for the log
     const logEvent: LogEvent = {
@@ -447,10 +477,11 @@ class LogM8 {
   }
 
   private _setLevel(logger: LogImpl, level: LogLevelType): void {
-    logger.level = level;
+    logger.level = this._logLevelSet.has(level) ? level : logger.level;
+
     logger._levelNumber = this._logLevelValues.indexOf(level);
 
-    logger.isEnabled = level !== LogLevel.off;
+    logger.isEnabled = logger.level !== LogLevel.off;
     // Boolean flags indicate enablement for that severity level and above
     const levelNumber = logger._levelNumber;
     logger.isFatal = this._logLevelValues.indexOf(LogLevel.fatal) <= levelNumber;
@@ -511,7 +542,7 @@ class LogM8 {
 
     this._appenders = [];
     this._loggers.clear();
-    this._defaultLevel = LogLevel.info;
+    this._globalLogLevel = LogLevel.info;
 
     // Dispose all plugins
     this._pluginManager.disposePlugins();
