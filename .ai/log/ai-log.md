@@ -1,5 +1,20 @@
 ## 2025-08-17
 
+### Add regex support to MatchFilter and unit tests
+
+Implements regex-based matching in allow/deny rules using /pattern/flags strings and adds tests for regex allow, case-insensitive deny, and number-to-string coercion.
+
+- **Affects:** `[code]` `[test]` `[doc]`
+
+#### src/filters/MatchFilter.ts
+
+- `Code ~` Added `_matches` utility to parse regex strings via `LogM8Utils.parseRegexFromString` and test against actual values; wired into allow/deny evaluation.
+- `Comment ~` Clarified behavior docstring for regex support.
+
+#### test/unit/matchFilter.test.ts
+
+- `Test +` Validates allow with /^app\./, deny with /password/i, and string coercion for numeric actuals.
+
 ### Add test for global vs per-logger level interaction
 
 Add unit test ensuring per-logger levels remain effective while the global level acts as an upper bound, verifying behavior across changes to the global level.

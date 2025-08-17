@@ -7,6 +7,8 @@
  */
 const TIMESTAMP_TOKEN_REGEX = /(yyyy|SSS|hh|mm|ss|SS|zz|z|yy|MM|dd|A|a|h|S)/g;
 
+const REGEX_MATCHER = /^\/(.+)\/([dgimsuvy]*)$/;
+
 // Constants for error serialization
 const EXCLUDED_ERROR_KEYS = new Set(['name', 'message', 'stack', 'cause']);
 const COMMON_NON_ENUMERABLE_PROPS = ['code', 'errno', 'syscall', 'path'] as const;
@@ -489,6 +491,34 @@ class LogM8Utils {
 
     // Start the serialization with a fresh WeakSet for tracking
     return serializeErrorInternal(error, new WeakSet());
+  }
+
+  /**
+   * Take a regex in the format /regex/flags and parse it into a RegExp object
+   *
+   * @param regex regex in the format /regex/flags
+   * @param extraFlags additional flags to apply to the regex
+   * @returns RegExp object or undefined if the regex is invalid
+   */
+  public static parseRegexFromString(regex: string, extraFlags?: string[]): RegExp | undefined {
+    try {
+      const match = regex.match(REGEX_MATCHER);
+      if (match == null) return undefined;
+      const [, pattern, flags] = match;
+
+      let finalFlags = flags;
+      if (Array.isArray(extraFlags)) {
+        for (const flag of extraFlags) {
+          if (!flags.includes(flag)) {
+            finalFlags += flag;
+          }
+        }
+      }
+
+      return new RegExp(pattern, finalFlags);
+    } catch (_e) {
+      return undefined;
+    }
   }
 }
 

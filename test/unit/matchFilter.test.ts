@@ -97,4 +97,66 @@ describe('MatchFilter', () => {
       }),
     ).toBe(false);
   });
+
+  it('supports regex string notation in allow rules', () => {
+    const f = new MatchFilterFactory().create({
+      name: 'match-filter',
+      allow: { logger: '/^app\\\./' },
+    });
+
+    // Matches /^app\./
+    expect(f.filter(baseEvent())).toBe(true);
+
+    // Does not match
+    expect(
+      f.filter({
+        ...baseEvent(),
+        logger: 'svc.core',
+      }),
+    ).toBe(false);
+  });
+
+  it('supports regex with flags in deny rules (case-insensitive)', () => {
+    const f = new MatchFilterFactory().create({
+      name: 'match-filter',
+      deny: { message: '/.*password.*/i' },
+    });
+
+    // Denied due to case-insensitive match
+    expect(
+      f.filter({
+        ...baseEvent(),
+        message: 'User typed PASSWORD in the field',
+      }),
+    ).toBe(false);
+
+    // Allowed when it does not match
+    expect(
+      f.filter({
+        ...baseEvent(),
+        message: 'All good',
+      }),
+    ).toBe(true);
+  });
+
+  it('coerces non-string actuals to string for regex checks', () => {
+    const f = new MatchFilterFactory().create({
+      name: 'match-filter',
+      allow: { 'data[0].id': '/^42$/' },
+    });
+
+    expect(
+      f.filter({
+        ...baseEvent(),
+        data: [{ id: 42 }],
+      }),
+    ).toBe(true);
+
+    expect(
+      f.filter({
+        ...baseEvent(),
+        data: [{ id: 7 }],
+      }),
+    ).toBe(false);
+  });
 });

@@ -219,20 +219,20 @@ See Supported Formatter Tokens.
 
 #### Match Filter
 
-Provides allow/deny rules based on path-based matching against log event properties.
+Provides allow/deny rules based on path-based equality or regex matching against log event properties.
 
 ```typescript
 {
   name: 'match-filter',
   // Optional: all rules must match to allow (AND logic)
   allow: {
-    'logger': 'app.service',
+    'logger': '/^app.*$/',
     'data[0].type': 'audit'
   },
   // Optional: any match denies (OR logic)
   deny: {
     'context.userId': '1234',
-    'message': 'password'
+    'message': '/.*password.*/'
   }
 }
 ```
