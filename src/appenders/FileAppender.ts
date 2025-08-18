@@ -63,24 +63,41 @@ class FileAppender implements Appender {
   private _formatter?: Formatter;
   private _filters: Filter[] = [];
   private _stream?: WriteStream;
+  private _streamCreationFailed = false;
 
   public init(config: AppenderConfig, formatter?: Formatter, filters?: Filter[]): void {
     this._config = config as FileAppenderConfig;
     this._formatter = formatter;
     this._filters = filters || [];
-    const flags = this._config.append ? 'a' : 'w';
-    this._stream = createWriteStream(this._config.filename ?? DEFAULT_FILENAME, { flags });
 
     this.enabled = this._config?.enabled !== false; // Default to true if not specified
     this.priority = this._config?.priority;
+
+    if (this.enabled) {
+      // Create the write stream
+      this._createStream();
+    }
   }
 
   public dispose(): void {
     this._stream?.end();
+    this._stream = undefined;
   }
 
   public write(event: LogEvent): void {
-    if (!this._stream) return;
+    if (this._streamCreationFailed) return; // If stream creation failed, cannot write
+
+    if (!this._stream) {
+      try {
+        this._createStream();
+      } catch (err) {
+        if (console && console.error) {
+          console.error(`LogM8 [FileAppender]: Failed to create file stream: ${err}`);
+        }
+        this._streamCreationFailed = true;
+      }
+    }
+    if (!this._stream) return; // If still undefined, initialization failed
 
     // Filter
     for (const filter of this._filters) {
@@ -120,6 +137,11 @@ class FileAppender implements Appender {
 
   private _getFilter(name: string): Filter | undefined {
     return this._filters.find((f) => f.name === name);
+  }
+
+  private _createStream(): void {
+    const flags = this._config?.append ? 'a' : 'w';
+    this._stream = createWriteStream(this._config?.filename ?? DEFAULT_FILENAME, { flags });
   }
 }
 
