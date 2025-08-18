@@ -1,3 +1,15 @@
+## 2025-08-18
+
+### Fix circular import between index.ts and LogM8.ts
+
+Resolved "LogM8 is not a constructor" errors by eliminating circular dependency where LogM8.ts imported types from index.ts while index.ts imported LogM8 class.
+
+- **Affects:** `[code]`
+
+#### src/LogM8.ts
+
+- `Code ~` Changed imports to source directly from individual files (`./Appender.ts`, `./AppenderConfig.ts`, etc.) instead of barrel import from `./index.ts`.
+
 ## 2025-08-17
 
 ### Add regex support to MatchFilter and unit tests

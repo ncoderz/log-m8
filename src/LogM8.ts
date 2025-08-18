@@ -1,17 +1,21 @@
+import type { Appender } from './Appender.ts';
+import type { AppenderConfig } from './AppenderConfig.ts';
 import { ConsoleAppenderFactory } from './appenders/ConsoleAppender.ts';
 /* NODEJS:START */
 import { FileAppenderFactory } from './appenders/FileAppender.ts';
 /* NODEJS:END */
+import type { Filter } from './Filter.ts';
 import { MatchFilterFactory } from './filters/MatchFilter.ts';
+import type { Formatter } from './Formatter.ts';
 import { DefaultFormatterFactory } from './formatters/DefaultFormatter.ts';
 import { JsonFormatterFactory } from './formatters/JsonFormatter.ts';
-import type { Appender, AppenderConfig, Filter, Formatter } from './index.ts';
 import type { Log } from './Log.ts';
 import type { LogContext } from './LogContext.ts';
 import type { LogEvent } from './LogEvent.ts';
 import type { LoggingConfig } from './LoggingConfig.ts';
 import type { LogImpl } from './LogImpl.ts';
 import { LogLevel, type LogLevelType } from './LogLevel.ts';
+import { LogM8Utils } from './LogM8Utils.ts';
 import type { PluginFactory } from './PluginFactory.ts';
 import { PluginKind } from './PluginKind.ts';
 import { PluginManager } from './PluginManager.ts';
@@ -148,13 +152,19 @@ class LogM8 {
 
     // Set up appenders
     const appenderConfigs = config.appenders ?? DEFAULT_APPENDERS;
-    for (const appenderConfig of appenderConfigs) {
+    for (const appenderConfigOrName of appenderConfigs) {
       const appender = this._pluginManager.createPlugin(
         PluginKind.appender,
-        appenderConfig,
+        appenderConfigOrName,
       ) as Appender;
 
-      const formatter = appenderConfig.formatter
+      const appenderConfig: AppenderConfig = LogM8Utils.isString(appenderConfigOrName)
+        ? {
+            name: appender.name,
+          }
+        : (appenderConfigOrName as AppenderConfig);
+
+      const formatter = appenderConfig?.formatter
         ? (this._pluginManager.createPlugin(
             PluginKind.formatter,
             appenderConfig.formatter,
