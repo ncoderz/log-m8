@@ -231,6 +231,15 @@ class LogM8 {
   }
 
   /**
+   * Checks if the logging system has been initialized.
+   *
+   * @returns True if the system is initialized, false otherwise.
+   */
+  public isInitialized(): boolean {
+    return this._initialized;
+  }
+
+  /**
    * Retrieves or creates a logger instance with hierarchical naming.
    *
    * Logger instances are cached and reused for the same name. Names can be

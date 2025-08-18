@@ -77,7 +77,7 @@ export interface LoggingConfig {
    * Appenders are executed in priority order (highest first) for
    * deterministic output behavior.
    */
-  appenders?: AppenderConfig[];
+  appenders?: (string | AppenderConfig)[];
 
   /**
    * Global filters applied before any appender-specific processing.
