@@ -45,7 +45,7 @@ export interface LoggingConfig {
    * Loggers will emit events at this level and all higher severity levels.
    * Defaults to 'info' if not specified.
    */
-  level?: LogLevelType;
+  level?: string | LogLevelType;
 
   /**
    * Per-logger level overrides by hierarchical name.

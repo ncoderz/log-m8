@@ -138,17 +138,19 @@ class LogM8 {
     this._reset();
 
     // Set the default logging level
-    this._globalLogLevel = this._logLevelSet.has(config.level as LogLevelType)
-      ? (config.level as LogLevelType)
+    const levelStr = (config.level ?? '').trim().toLowerCase();
+    this._globalLogLevel = this._logLevelSet.has(levelStr as LogLevelType)
+      ? (levelStr as LogLevelType)
       : LogLevel.info;
 
     // Set up loggers
-    for (const [name, level] of Object.entries(config.loggers ?? {})) {
+    for (const [name, l] of Object.entries(config.loggers ?? {})) {
+      const levelStr = (l ?? '').trim().toLowerCase();
       const logger = this.getLogger(name);
-      const l = this._logLevelSet.has(level as LogLevelType)
-        ? (level as LogLevelType)
+      const level = this._logLevelSet.has(levelStr as LogLevelType)
+        ? (levelStr as LogLevelType)
         : this._globalLogLevel;
-      logger.setLevel(l);
+      logger.setLevel(level);
     }
 
     // Set up appenders
