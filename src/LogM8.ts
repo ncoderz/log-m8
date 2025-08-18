@@ -21,10 +21,11 @@ import { PluginKind } from './PluginKind.ts';
 import { PluginManager } from './PluginManager.ts';
 
 const MAX_LOG_BUFFER_SIZE = 100; // Maximum size of the log buffer before dropping events
+const DEFAULT_FORMATTER = 'default-formatter';
 const DEFAULT_APPENDERS = [
   {
     name: 'console',
-    formatter: 'default-formatter',
+    formatter: DEFAULT_FORMATTER,
   },
 ];
 
