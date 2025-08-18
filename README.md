@@ -101,6 +101,7 @@ LogM8.init({
       name: 'console',
       formatter: {
         name: 'default-formatter',
+        format: ['{timestamp} {LEVEL} [{logger}]', '{message}', '{data}'],
         timestampFormat: 'yyyy-MM-dd hh:mm:ss.SSS',
         color: true
       },
@@ -110,7 +111,11 @@ LogM8.init({
     {
       name: 'file',
       filename: 'app.log',
-      formatter: 'json-formatter',
+      formatter: {
+        name: 'json-formatter',
+        format: ['timestamp', 'level', 'logger', 'message', 'data'],
+        timestampFormat: 'iso',
+      }
     }
   ],
 
@@ -164,13 +169,13 @@ Formatters transform log events into output formats suitable for different appen
 
 ### Supported Formatter Tokens
 
-- `{timestamp}`: Formatted timestamp
-- `{LEVEL}`: Uppercase level label (with optional colorization)
-- `{level}`: Lowercase level name
-- `{logger}`: Logger name
-- `{message}`: Primary log message
-- `{data}`: Additional data arguments
-- `{context.*}`: Nested context properties
+- `timestamp`: Formatted timestamp
+- `LEVEL`: Uppercase level label (Default Formatter Only. With standard padding, and optional colorization)
+- `level`: Lowercase level name
+- `logger`: Logger name
+- `message`: Primary log message
+- `data`: Additional data arguments
+- `context.*`: Nested context properties
 
 All tokens support accessing nested items with `data[0].property` like notation.
 

@@ -15,6 +15,8 @@ const NAME = 'file';
 const VERSION = '1.0.0';
 const KIND = PluginKind.appender;
 
+const DEFAULT_FILENAME = 'app.log';
+
 const SUPPORTED_LEVELS = new Set<LogLevelType>([
   LogLevel.fatal,
   LogLevel.error,
@@ -67,7 +69,7 @@ class FileAppender implements Appender {
     this._formatter = formatter;
     this._filters = filters || [];
     const flags = this._config.append ? 'a' : 'w';
-    this._stream = createWriteStream(this._config.filename, { flags });
+    this._stream = createWriteStream(this._config.filename ?? DEFAULT_FILENAME, { flags });
 
     this.enabled = this._config?.enabled !== false; // Default to true if not specified
     this.priority = this._config?.priority;
