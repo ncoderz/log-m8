@@ -18,6 +18,7 @@ export { type LogContext } from './LogContext.ts';
 export { type LoggingConfig } from './LoggingConfig.ts';
 export { LogLevel, type LogLevelType } from './LogLevel.ts';
 export { LogM8Utils } from './LogM8Utils.ts';
+export { NullLogger } from './NullLogger.ts';
 export { type Plugin } from './Plugin.ts';
 export { type PluginConfig } from './PluginConfig.ts';
 export { type PluginFactory } from './PluginFactory.ts';

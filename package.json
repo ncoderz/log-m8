@@ -1,6 +1,6 @@
 {
   "name": "@ncoderz/log-m8",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Logging system for TypeScript / JavaScript",
   "author": "RA Sewell <richard.sewell@ncoderz.com>",
   "license": "BSD-2-Clause",

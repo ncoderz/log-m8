@@ -1,3 +1,8 @@
+/**
+ * LogM8 - Central logging manager for TypeScript/JavaScript
+ *
+ */
+
 import type { Appender } from './Appender.ts';
 import type { AppenderConfig } from './AppenderConfig.ts';
 import { ConsoleAppenderFactory } from './appenders/ConsoleAppender.ts';
@@ -137,11 +142,8 @@ class LogM8 {
 
     this._reset();
 
-    // Set the default logging level
-    const levelStr = (config.level ?? '').trim().toLowerCase();
-    this._globalLogLevel = this._logLevelSet.has(levelStr as LogLevelType)
-      ? (levelStr as LogLevelType)
-      : LogLevel.info;
+    // Set the global logging level
+    this.setLevel(config.level ?? LogLevel.info);
 
     // Set up loggers
     for (const [name, l] of Object.entries(config.loggers ?? {})) {
@@ -313,12 +315,14 @@ class LogM8 {
    * @param level - New logging level name (e.g., 'info', 'debug', 'off')
    * @param logger - Optional logger name to set level for a specific logger
    */
-  public setLevel(level: LogLevelType, logger?: string): void {
+  public setLevel(level: string | LogLevelType, logger?: string): void {
+    const levelStr = (level ?? '').trim().toLowerCase() as LogLevelType;
+
     if (logger) {
-      this.getLogger(logger).setLevel(level);
+      this.getLogger(logger).setLevel(levelStr);
     } else {
       // Set global log level
-      this._globalLogLevel = this._logLevelSet.has(level) ? level : this._globalLogLevel;
+      this._globalLogLevel = this._logLevelSet.has(levelStr) ? levelStr : this._globalLogLevel;
       this._globalLogLevelNumber = this._logLevelValues.indexOf(this._globalLogLevel);
     }
   }
@@ -498,10 +502,11 @@ class LogM8 {
     }
   }
 
-  private _setLevel(logger: LogImpl, level: LogLevelType): void {
-    logger.level = this._logLevelSet.has(level) ? level : logger.level;
+  private _setLevel(logger: LogImpl, level: string | LogLevelType): void {
+    const levelStr = (level ?? '').trim().toLowerCase() as LogLevelType;
 
-    logger._levelNumber = this._logLevelValues.indexOf(level);
+    logger.level = this._logLevelSet.has(levelStr) ? levelStr : logger.level;
+    logger._levelNumber = this._logLevelValues.indexOf(logger.level);
 
     logger.isEnabled = logger.level !== LogLevel.off;
     // Boolean flags indicate enablement for that severity level and above
