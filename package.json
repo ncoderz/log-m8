@@ -1,6 +1,6 @@
 {
   "name": "@ncoderz/log-m8",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "Logging system for TypeScript / JavaScript",
   "author": "RA Sewell <richard.sewell@ncoderz.com>",
   "license": "BSD-2-Clause",
@@ -67,6 +67,18 @@
     "node": ">=18",
     "npm": ">=10"
   },
+  "homepage": "https://github.com/ncoderz/log-m8#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ncoderz/log-m8.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ncoderz/log-m8/issues"
+  },
+  "keywords": [
+    "log",
+    "logging"
+  ],
   "dependencies": {},
   "devDependencies": {
     "vitest": "^1.6.0",
