@@ -1,6 +1,7 @@
 import { LogM8 as Logging } from './LogM8.ts';
 
 // Type exports for public API
+export { PACKAGE_INFO } from './_generated/package_info.ts';
 export { type Appender } from './Appender.ts';
 export { type AppenderConfig } from './AppenderConfig.ts';
 export { type ConsoleAppenderConfig } from './appenders/ConsoleAppender.ts';

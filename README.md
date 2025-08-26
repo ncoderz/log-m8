@@ -1,6 +1,6 @@
 # log-m8
 
-![Build & Test](https://github.com/ncoderz/superenum/actions/workflows/build-test.yml/badge.svg?branch=main)
+![Build & Test](https://github.com/ncoderz/log-m8/actions/workflows/build-test.yml/badge.svg?branch=main)
 ![npm version](https://img.shields.io/npm/v/@ncoderz/log-m8)
 ![License](https://img.shields.io/badge/license-BSD--2--Clause-blue)
 
