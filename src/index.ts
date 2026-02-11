@@ -1,20 +1,23 @@
 import { LogM8 as Logging } from './LogM8.ts';
 
 // Type exports for public API
+export { PACKAGE_INFO } from './_generated/package_info.ts';
 export { type Appender } from './Appender.ts';
 export { type AppenderConfig } from './AppenderConfig.ts';
-export { type ConsoleAppenderConfig } from './appenders/ConsoleAppender.ts';
+export { ConsoleAppender, type ConsoleAppenderConfig } from './appenders/ConsoleAppender.ts';
 /* NODEJS:START */
-export { type FileAppenderConfig } from './appenders/FileAppender.ts';
+export { FileAppender, type FileAppenderConfig } from './appenders/FileAppender.ts';
 /* NODEJS:END */
 export { type Filter } from './Filter.ts';
 export { type FilterConfig } from './FilterConfig.ts';
-export { type MatchFilterConfig } from './filters/MatchFilter.ts';
+export { MatchFilter, type MatchFilterConfig } from './filters/MatchFilter.ts';
 export { type Formatter } from './Formatter.ts';
 export { type FormatterConfig } from './FormatterConfig.ts';
-export { type DefaultFormatterConfig } from './formatters/DefaultFormatter.ts';
+export { DefaultFormatter, type DefaultFormatterConfig } from './formatters/DefaultFormatter.ts';
+export { JsonFormatter, type JsonFormatterConfig } from './formatters/JsonFormatter.ts';
 export { type Log } from './Log.ts';
 export { type LogContext } from './LogContext.ts';
+export { type LogEvent } from './LogEvent.ts';
 export { type LoggingConfig } from './LoggingConfig.ts';
 export { LogLevel, type LogLevelType } from './LogLevel.ts';
 export { LogM8Utils } from './LogM8Utils.ts';

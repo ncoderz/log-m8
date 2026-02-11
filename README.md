@@ -1,6 +1,6 @@
 # log-m8
 
-![Build & Test](https://github.com/ncoderz/superenum/actions/workflows/build-test.yml/badge.svg?branch=main)
+![Build & Test](https://github.com/ncoderz/log-m8/actions/workflows/build-test.yml/badge.svg?branch=main)
 ![npm version](https://img.shields.io/npm/v/@ncoderz/log-m8)
 ![License](https://img.shields.io/badge/license-BSD--2--Clause-blue)
 
@@ -12,6 +12,7 @@ A fast, small, flexible and extensible logging system for TypeScript and JavaScr
 
 - 🌲 **Hierarchical loggers** - organize by module with inheritance
 - 🔌 **Plugin architecture** - extensible with custom appenders, formatters, and filters
+- 🔄 **Dynamic appenders** - add and remove appenders at runtime without re-initialization
 - 🎨 **Multiple output targets** - console, file, and more with custom formatters
 - 🔍 **Configurable filters** - control what gets logged and where
 - 🚀 **Performance-optimized** - designed for minimal overhead
@@ -263,6 +264,37 @@ LogM8.disableFilter('sensitive-data', 'console');
 LogM8.enableFilter('sensitive-data', 'console');
 
 ```
+
+### Dynamic Appender Management
+
+Appenders can be added and removed after initialization.
+This is useful for diagnostic injection, feature-flag-driven logging, or attaching
+test spies at runtime.
+
+```typescript
+// Add an appender at runtime
+LogM8.addAppender({
+  name: 'file',
+  filename: 'debug.log',
+  formatter: 'json-formatter',
+  priority: 10
+});
+
+// Add by name (uses factory defaults)
+LogM8.addAppender('console');
+
+// Check which appenders are active (returns names in priority order)
+console.log(LogM8.getAppenderNames()); // ['file', 'console']
+
+// Remove an appender (flushes and disposes it)
+LogM8.removeAppender('file');
+
+// Returns false if the appender doesn't exist
+LogM8.removeAppender('unknown'); // false
+```
+
+Note: `addAppender` must be called after `init()` and the appender name must not
+already be in use. To swap an appender's configuration, remove then re-add it.
 
 ### Adjusting log levels at runtime
 

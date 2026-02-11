@@ -197,4 +197,4 @@ class JsonFormatterFactory implements PluginFactory<JsonFormatterConfig, JsonFor
   }
 }
 
-export { JsonFormatterFactory };
+export { JsonFormatter, JsonFormatterFactory };

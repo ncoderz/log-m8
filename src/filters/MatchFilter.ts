@@ -196,4 +196,4 @@ class MatchFilterFactory implements PluginFactory<MatchFilterConfig, MatchFilter
   }
 }
 
-export { MatchFilterFactory };
+export { MatchFilter, MatchFilterFactory };

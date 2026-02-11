@@ -82,6 +82,7 @@ class LogM8 {
   private _globalLogLevelNumber: number;
   private _logLevelValues: LogLevelType[];
   private _logLevelSet: Set<LogLevelType>;
+  private _logLevelIndexMap: Map<LogLevelType, number>;
 
   // Buffer for log events before the system is initialized
   private _logBuffer: LogEvent[];
@@ -95,8 +96,11 @@ class LogM8 {
 
     this._logLevelValues = Object.values(LogLevel);
     this._logLevelSet = new Set<LogLevelType>(this._logLevelValues);
+    this._logLevelIndexMap = new Map<LogLevelType, number>(
+      this._logLevelValues.map((level, index) => [level, index]),
+    );
     this._globalLogLevel = LogLevel.info;
-    this._globalLogLevelNumber = this._logLevelValues.indexOf(LogLevel.info);
+    this._globalLogLevelNumber = this._logLevelIndexMap.get(LogLevel.info)!;
 
     this._logBuffer = [];
 
@@ -158,40 +162,7 @@ class LogM8 {
     // Set up appenders
     const appenderConfigs = config.appenders ?? DEFAULT_APPENDERS;
     for (const appenderConfigOrName of appenderConfigs) {
-      const appender = this._pluginManager.createPlugin(
-        PluginKind.appender,
-        appenderConfigOrName,
-      ) as Appender;
-
-      const appenderConfig: AppenderConfig = LogM8Utils.isString(appenderConfigOrName)
-        ? {
-            name: appender.name,
-          }
-        : (appenderConfigOrName as AppenderConfig);
-
-      const formatter = appenderConfig?.formatter
-        ? (this._pluginManager.createPlugin(
-            PluginKind.formatter,
-            appenderConfig.formatter,
-          ) as Formatter)
-        : undefined;
-
-      const filters: Filter[] = [];
-      const ac = appenderConfig as AppenderConfig;
-      for (const filterConfig of ac.filters ?? []) {
-        const filter = this._pluginManager.createPlugin(PluginKind.filter, filterConfig);
-        if (filter) {
-          filters.push(filter as Filter);
-        } else {
-          if (console && console.log) {
-            console.log(
-              `LogM8: Filter '${filterConfig}' not found for appender ${appenderConfig.name}.`,
-            );
-          }
-        }
-      }
-
-      appender.init(appenderConfig, formatter, filters);
+      const appender = this._createAndInitAppender(appenderConfigOrName);
       this._appenders.push(appender);
     }
 
@@ -323,7 +294,7 @@ class LogM8 {
     } else {
       // Set global log level
       this._globalLogLevel = this._logLevelSet.has(levelStr) ? levelStr : this._globalLogLevel;
-      this._globalLogLevelNumber = this._logLevelValues.indexOf(this._globalLogLevel);
+      this._globalLogLevelNumber = this._logLevelIndexMap.get(this._globalLogLevel)!;
     }
   }
 
@@ -347,6 +318,105 @@ class LogM8 {
     const appender = this._getAppender(name);
     if (!appender) return;
     appender.enabled = false;
+  }
+
+  /**
+   * Adds an appender to the logging system at runtime.
+   *
+   * Creates and initializes the appender using the plugin factory system,
+   * including any configured formatter and filters. The appender is inserted
+   * into the priority-sorted appender list and immediately begins receiving
+   * log events.
+   *
+   * Must be called after init(). The appender name must not already be in use.
+   *
+   * @param config - Appender name (string) or full configuration object
+   *
+   * @throws {Error} When called before init()
+   * @throws {Error} When an appender with the same name already exists
+   * @throws {Error} When the referenced plugin factory is not registered
+   *
+   * @example
+   * ```typescript
+   * // Add by name (uses factory defaults)
+   * Logging.addAppender('console');
+   *
+   * // Add with full configuration
+   * Logging.addAppender({
+   *   name: 'file',
+   *   filename: 'debug.log',
+   *   formatter: 'json-formatter',
+   *   filters: ['sensitive-data'],
+   *   priority: 10
+   * });
+   * ```
+   */
+  public addAppender(config: string | AppenderConfig): void {
+    if (!this._initialized) {
+      throw new Error('LogM8: Cannot add appender before init()');
+    }
+    const name = typeof config === 'string' ? config : config.name;
+    if (this._getAppender(name)) {
+      throw new Error(`LogM8: Appender '${name}' already exists`);
+    }
+
+    const appender = this._createAndInitAppender(config);
+    this._appenders.push(appender);
+    this._sortAppenders();
+  }
+
+  /**
+   * Removes an appender from the logging system at runtime.
+   *
+   * Flushes any buffered output, disposes the appender, and removes it
+   * from the active appender list. The appender will no longer receive
+   * log events after removal.
+   *
+   * @param name - Name of the appender to remove
+   * @returns True if the appender was found and removed, false otherwise
+   *
+   * @example
+   * ```typescript
+   * // Remove a dynamically added appender
+   * Logging.removeAppender('file');
+   *
+   * // Check if removal succeeded
+   * if (!Logging.removeAppender('unknown')) {
+   *   console.warn('Appender not found');
+   * }
+   * ```
+   */
+  public removeAppender(name: string): boolean {
+    const appender = this._getAppender(name);
+    if (!appender) return false;
+    try {
+      appender.flush();
+    } catch (err) {
+      if (console && console.error) {
+        console.error(`LogM8: Failed to flush appender during removal: ${appender.name}:`, err);
+      }
+    }
+    appender.dispose();
+    this._appenders = this._appenders.filter((a) => a !== appender);
+    return true;
+  }
+
+  /**
+   * Returns the names of all currently registered appenders.
+   *
+   * The returned array is a snapshot; modifications to it do not affect
+   * the logging system. Names are in priority-sorted order (highest first).
+   *
+   * @returns Array of appender names
+   *
+   * @example
+   * ```typescript
+   * const names = Logging.getAppenderNames();
+   * console.log('Active appenders:', names); // ['console', 'file']
+   * ```
+   */
+  public getAppenderNames(): string[] {
+    return this._appenders.map((a) => a.name);
   }
 
   /**
@@ -462,15 +532,14 @@ class LogM8 {
     this._pluginManager.registerPluginFactory(pluginFactory);
   }
 
-  private _log(
-    logger: LogImpl,
-    level: LogLevelType,
-    message: string | unknown,
-    ...data: unknown[]
-  ): void {
+  private _log(logger: LogImpl, level: LogLevelType, message: string | unknown): void {
     // Early return if level not enabled - O(1) performance for disabled logs
-    const levelNumber = this._logLevelValues.indexOf(level);
+    const levelNumber = this._logLevelIndexMap.get(level)!;
     if (levelNumber > logger._levelNumber || levelNumber > this._globalLogLevelNumber) return;
+
+    // Collect extra data arguments only after the level check passes,
+    // avoiding rest-param array allocation on the (common) discard path.
+    const data: unknown[] = arguments.length > 3 ? Array.prototype.slice.call(arguments, 3) : []; // eslint-disable-line prefer-rest-params
 
     // Create a log event for the log
     const logEvent: LogEvent = {
@@ -506,18 +575,18 @@ class LogM8 {
     const levelStr = (level ?? '').trim().toLowerCase() as LogLevelType;
 
     logger.level = this._logLevelSet.has(levelStr) ? levelStr : logger.level;
-    logger._levelNumber = this._logLevelValues.indexOf(logger.level);
+    logger._levelNumber = this._logLevelIndexMap.get(logger.level)!;
 
     logger.isEnabled = logger.level !== LogLevel.off;
     // Boolean flags indicate enablement for that severity level and above
     const levelNumber = logger._levelNumber;
-    logger.isFatal = this._logLevelValues.indexOf(LogLevel.fatal) <= levelNumber;
-    logger.isError = this._logLevelValues.indexOf(LogLevel.error) <= levelNumber;
-    logger.isWarn = this._logLevelValues.indexOf(LogLevel.warn) <= levelNumber;
-    logger.isInfo = this._logLevelValues.indexOf(LogLevel.info) <= levelNumber;
-    logger.isDebug = this._logLevelValues.indexOf(LogLevel.debug) <= levelNumber;
-    logger.isTrack = this._logLevelValues.indexOf(LogLevel.track) <= levelNumber;
-    logger.isTrace = this._logLevelValues.indexOf(LogLevel.trace) <= levelNumber;
+    logger.isFatal = this._logLevelIndexMap.get(LogLevel.fatal)! <= levelNumber;
+    logger.isError = this._logLevelIndexMap.get(LogLevel.error)! <= levelNumber;
+    logger.isWarn = this._logLevelIndexMap.get(LogLevel.warn)! <= levelNumber;
+    logger.isInfo = this._logLevelIndexMap.get(LogLevel.info)! <= levelNumber;
+    logger.isDebug = this._logLevelIndexMap.get(LogLevel.debug)! <= levelNumber;
+    logger.isTrack = this._logLevelIndexMap.get(LogLevel.track)! <= levelNumber;
+    logger.isTrace = this._logLevelIndexMap.get(LogLevel.trace)! <= levelNumber;
   }
 
   private _setContext(logger: LogImpl, context: LogContext): void {
@@ -546,13 +615,52 @@ class LogM8 {
     }
   }
 
+  private _createAndInitAppender(appenderConfigOrName: string | AppenderConfig): Appender {
+    const appender = this._pluginManager.createPlugin(
+      PluginKind.appender,
+      appenderConfigOrName,
+    ) as Appender;
+
+    const appenderConfig: AppenderConfig = LogM8Utils.isString(appenderConfigOrName)
+      ? {
+          name: appender.name,
+        }
+      : (appenderConfigOrName as AppenderConfig);
+
+    const formatter = appenderConfig?.formatter
+      ? (this._pluginManager.createPlugin(
+          PluginKind.formatter,
+          appenderConfig.formatter,
+        ) as Formatter)
+      : undefined;
+
+    const filters: Filter[] = [];
+    const ac = appenderConfig as AppenderConfig;
+    for (const filterConfig of ac.filters ?? []) {
+      const filter = this._pluginManager.createPlugin(PluginKind.filter, filterConfig);
+      if (filter) {
+        filters.push(filter as Filter);
+      } else {
+        if (console && console.log) {
+          console.log(
+            `LogM8: Filter '${filterConfig}' not found for appender ${appenderConfig.name}.`,
+          );
+        }
+      }
+    }
+
+    appender.init(appenderConfig, formatter, filters);
+    return appender;
+  }
+
   private _getAppender(name: string): Appender | undefined {
     return this._appenders.find((a) => a.name === name);
   }
 
   private _sortAppenders(): void {
-    // Sort by descending priority - higher numbers execute first
-    this._appenders.sort((a, b) => {
+    // Copy-on-write: produce a new array so any in-flight iteration
+    // over the previous reference remains safe from mutation.
+    this._appenders = [...this._appenders].sort((a, b) => {
       const aPriority = a?.priority ?? 0;
       const bPriority = b?.priority ?? 0;
       return bPriority - aPriority; // Higher priority first

@@ -247,4 +247,4 @@ class DefaultFormatterFactory implements PluginFactory<DefaultFormatterConfig, D
   }
 }
 
-export { DefaultFormatterFactory };
+export { DefaultFormatter, DefaultFormatterFactory };
